@@ -1,13 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "@/app/globals.css";  // Fixed import path to use the global CSS
-
-// Initialize the Inter font
-const inter = Inter({ 
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-inter',
-});
 
 export const metadata: Metadata = {
   title: "Campus Stay | Student Accommodation Platform",
@@ -22,16 +14,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default function MarketingLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang={"en"} className={inter.variable}>
-      <body className="min-h-screen flex flex-col">
-        {children}
-      </body>
-    </html>
+    <>{children}</>
   );
 }
