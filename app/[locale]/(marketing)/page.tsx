@@ -11,8 +11,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, Home, Building, MapPin, Star, ArrowRight, Check, Shield, Clock } from 'lucide-react';
-import Header from './(marketing)/Header';
-import Footer from './(marketing)/Footer';
+import Header from './Header';
+import Footer from './Footer';
 import Image from 'next/image';
 
 export default function HomePage() {
