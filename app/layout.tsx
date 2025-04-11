@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import ".";
 
 // Initialize the Inter font
 const inter = Inter({ 
