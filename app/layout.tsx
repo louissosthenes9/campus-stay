@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import "@app/globals.css";  // Fixed import path to use the global CSS
+import "./globals.css";  // Fixed import path to use the global CSS
 
 // Initialize the Inter font
 const inter = Inter({ 
