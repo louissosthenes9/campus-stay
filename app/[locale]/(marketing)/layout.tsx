@@ -24,13 +24,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-  params,
 }: Readonly<{
   children: React.ReactNode;
-  params: { locale: string };
 }>) {
   return (
-    <html lang={params.locale || "en"} className={inter.variable}>
+    <html lang={"en"} className={inter.variable}>
       <body className="min-h-screen flex flex-col">
         {children}
       </body>
