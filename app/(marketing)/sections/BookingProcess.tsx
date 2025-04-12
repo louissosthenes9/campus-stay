@@ -6,31 +6,9 @@ import {
     ArrowRight,
     Check,
   } from 'lucide-react';
+import { fadeIn, scaleIn, staggerContainer } from '@/utils/motion';
 export default function BookingProcess() {
-    const fadeIn = {
-        initial: { opacity: 0, y: 20 },
-        whileInView: { opacity: 1, y: 0 },
-        transition: { duration: 0.6 },
-        viewport: { once: true },
-      };
-
-      const staggerContainer = {
-        initial: {},
-        whileInView: {
-          transition: {
-            staggerChildren: 0.1,
-          },
-        },
-        viewport: { once: true },
-      };
-      
-  const scaleIn = {
-    initial: { opacity: 0, scale: 0.95 },
-    whileInView: { opacity: 1, scale: 1 },
-    transition: { duration: 0.5 },
-    viewport: { once: true },
-  };
-    
+   
   return (
     <section className="py-16 bg-gradient-to-b from-yellow-50 to-yellow-100">
     <div className="container mx-auto px-4">

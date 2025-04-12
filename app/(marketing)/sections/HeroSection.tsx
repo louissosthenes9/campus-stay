@@ -4,39 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Search,
-  Star,
-  ArrowRight,
-  Shield,
-  Clock,
-  Users,
-  DollarSign,
-  BarChart,
 } from 'lucide-react';
 import Image from 'next/image';
+import { fadeIn, scaleIn, staggerContainer } from '@/utils/motion';
 export default function HeroSection() {
-    const fadeIn = {
-        initial: { opacity: 0, y: 20 },
-        whileInView: { opacity: 1, y: 0 },
-        transition: { duration: 0.6 },
-        viewport: { once: true },
-      };
-    
-      const scaleIn = {
-        initial: { opacity: 0, scale: 0.95 },
-        whileInView: { opacity: 1, scale: 1 },
-        transition: { duration: 0.5 },
-        viewport: { once: true },
-      };
-    
-      const staggerContainer = {
-        initial: {},
-        whileInView: {
-          transition: {
-            staggerChildren: 0.1,
-          },
-        },
-        viewport: { once: true },
-      };
   return (
      <section id="home" className="py-16 md:py-24 bg-gradient-to-b from-card to-muted">
               <div className="container mx-auto px-4">
