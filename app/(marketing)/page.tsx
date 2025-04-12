@@ -132,7 +132,7 @@ export default function HomePage() {
                 <div className="relative rounded-xl overflow-hidden shadow-xl">
                   <div className="aspect-w-16 aspect-h-9 h-80">
                     <Image
-                      src="/api/placeholder/600/400" 
+                      src="/images/placeholder.jpg" 
                       width={600}
                       height={400}
                       alt="Student searching for accommodation" 
@@ -188,7 +188,7 @@ export default function HomePage() {
                       className="w-full h-48 object-cover"
                     />
                     <div className="absolute top-3 right-3 bg-blue-600 text-white px-2 py-1 rounded text-xs">
-                      +{Math.floor(Math.random() * 5) + 3} photos
+                      {4}photos
                     </div>
                   </div>
                   <div className="p-4">
@@ -245,7 +245,7 @@ export default function HomePage() {
             >
               <motion.div variants={fadeIn} className="bg-white rounded-xl overflow-hidden shadow-md">
                 <Image 
-                  src="/api/placeholder/400/250" 
+                  src="/images/placeholder.jpg" 
                   width={400}
                   height={250}
                   alt="Shared Accommodation" 
@@ -262,7 +262,7 @@ export default function HomePage() {
               </motion.div>
               <motion.div variants={fadeIn} className="bg-white rounded-xl overflow-hidden shadow-md">
                 <Image 
-                  src="/api/placeholder/400/250" 
+                  src="/images/placeholder.jpg" 
                   width={400}
                   height={250}
                   alt="UDSM Student Living" 
@@ -279,7 +279,7 @@ export default function HomePage() {
               </motion.div>
               <motion.div variants={fadeIn} className="bg-white rounded-xl overflow-hidden shadow-md">
                 <Image 
-                  src="/api/placeholder/400/250" 
+                  src="/images/placeholder.jpg" 
                   width={400}
                   height={250}
                   alt="IFM Student Living" 
@@ -354,7 +354,7 @@ export default function HomePage() {
               
               <div className="w-full md:w-1/2 md:pl-8">
                 <Image 
-                  src="/api/placeholder/400/300" 
+                  src="/images/placeholder.jpg" 
                   width={400}
                   height={300}
                   alt="Student in room" 
@@ -416,7 +416,7 @@ export default function HomePage() {
                 <div className="flex flex-col space-y-4">
                   <div className="bg-white p-4 rounded-xl shadow-sm flex items-center">
                     <Image 
-                      src="/api/placeholder/60/60" 
+                      src="/images/placeholder.jpg" 
                       width={60}
                       height={60}
                       alt="Student testimonial" 
@@ -427,7 +427,7 @@ export default function HomePage() {
                   
                   <div className="bg-white p-4 rounded-xl shadow-sm">
                     <Image 
-                      src="/api/placeholder/60/60" 
+                      src="/images/placeholder.jpg" 
                       width={60}
                       height={60}
                       alt="Student testimonial" 
@@ -437,7 +437,7 @@ export default function HomePage() {
                   
                   <div className="bg-white p-4 rounded-xl shadow-sm">
                     <Image 
-                      src="/api/placeholder/60/60" 
+                      src="/images/placeholder.jpg" 
                       width={60}
                       height={60}
                       alt="Student testimonial" 

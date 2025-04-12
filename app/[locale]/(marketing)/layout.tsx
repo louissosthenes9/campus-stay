@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "@/app/globals.css";  // Fixed import path to use the global CSS
+import React from "react";
 
 export const metadata: Metadata = {
   title: "Campus Stay | Student Accommodation Platform",

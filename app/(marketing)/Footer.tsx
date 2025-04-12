@@ -121,7 +121,7 @@ export default function Footer() {
         <div className="pt-6 border-t border-gray-200 mt-8">
           <div className="flex flex-col md:flex-row md:justify-between items-center">
             <p className="text-sm text-gray-500 mb-4 md:mb-0">
-              © {new Date().getFullYear()} CampusStay. All rights reserved.
+              2025 CampusStay. All rights reserved.
             </p>
             <div className="flex space-x-4">
               <Link href="/terms" className="text-sm text-gray-500 hover:text-blue-600">
