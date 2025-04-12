@@ -82,7 +82,7 @@ export default function HomePage() {
       <Header />
       <main>
         {/* Hero Section */}
-         <HeroSection />
+        <HeroSection />
         {/* Featured Listings Section */}
         <section id="listings" className="py-16 bg-muted">
           <div className="container mx-auto px-4">
@@ -107,11 +107,10 @@ export default function HomePage() {
                 <motion.span
                   key={index}
                   variants={fadeIn}
-                  className={`px-4 py-1 rounded-full text-sm cursor-pointer transition-colors duration-300 ${
-                    index === 0
+                  className={`px-4 py-1 rounded-full text-sm cursor-pointer transition-colors duration-300 ${index === 0
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-card border border-border hover:bg-primary/10'
-                  }`}
+                    }`}
                 >
                   {region}
                 </motion.span>
@@ -227,7 +226,7 @@ export default function HomePage() {
                   className="bg-card rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300"
                 >
                   <Image
-                    src="/images/placeholder.jpg"
+                    src="/student-room4.jpg"
                     width={400}
                     height={250}
                     alt={listing.title}
@@ -315,7 +314,8 @@ export default function HomePage() {
         </section>
 
         {/* Booking Process Section */}
-        <BookingProcess/>
+        <BookingProcess />
+
         {/* Perfect Room Section */}
         <section className="py-16 bg-card">
           <div className="container mx-auto px-4">
@@ -429,8 +429,8 @@ export default function HomePage() {
                 <div className="flex flex-col space-y-4">
                   {[
                     { value: '+2M', alt: 'Total bookings' },
-                    { value: '', alt: 'Student testimonial' },
-                    { value: '', alt: 'Student testimonial' },
+                    { value: '+50k', alt: 'Student testimonial' },
+                    { value: '+30k', alt: 'Student testimonial' },
                   ].map((item, index) => (
                     <motion.div
                       key={index}
@@ -438,7 +438,7 @@ export default function HomePage() {
                       variants={scaleIn}
                     >
                       <Image
-                        src="/images/placeholder.jpg"
+                        src="/student-room.jpg"
                         width={60}
                         height={60}
                         alt={item.alt}
