@@ -1,210 +1,224 @@
 'use client';
 import { motion } from 'framer-motion';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Home, Building, MapPin, Star, ArrowRight, Check, Shield, Clock } from 'lucide-react';
+import {
+  Search,
+  Star,
+  ArrowRight,
+  Shield,
+  Clock,
+  Users,
+  DollarSign,
+  BarChart,
+} from 'lucide-react';
 import Header from './Header';
 import Footer from './Footer';
 import Image from 'next/image';
+import Hero from './Hero';
 
 export default function HomePage() {
   const fadeIn = {
     initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 }
+    whileInView: { opacity: 1, y: 0 },
+    transition: { duration: 0.6 },
+    viewport: { once: true },
+  };
+
+  const scaleIn = {
+    initial: { opacity: 0, scale: 0.95 },
+    whileInView: { opacity: 1, scale: 1 },
+    transition: { duration: 0.5 },
+    viewport: { once: true },
   };
 
   const staggerContainer = {
-    animate: {
+    initial: {},
+    whileInView: {
       transition: {
-        staggerChildren: 0.1
-      }
-    }
+        staggerChildren: 0.1,
+      },
+    },
+    viewport: { once: true },
   };
 
-  // Example university data
   const topUniversities = [
-    { name: "University of Dar es Salaam", logo: "/placeholder-logo.png" },
-    { name: "IFM", logo: "/placeholder-logo.png" },
-    { name: "DIT", logo: "/placeholder-logo.png" },
-    { name: "University of Dodoma", logo: "/placeholder-logo.png" }
+    { name: 'University of Dar es Salaam', logo: '/placeholder-logo.png' },
+    { name: 'IFM', logo: '/placeholder-logo.png' },
+    { name: 'DIT', logo: '/placeholder-logo.png' },
+    { name: 'University of Dodoma', logo: '/placeholder-logo.png' },
   ];
 
-  // Example accommodation listings
   const featuredListings = [
     {
-      title: "Modern Apartment near UDSM",
-      location: "5 minutes from University of Dar es Salaam",
-      price: "120,000",
+      title: 'Modern Apartment near UDSM',
+      location: '5 minutes from University of Dar es Salaam',
+      price: '120,000',
       rating: 4.8,
       reviews: 24,
-      image: "/appartments.jpeg"
+      image: '/bedroom.jpg',
     },
     {
-      title: "Student Hostel at Mikocheni",
-      location: "10 minutes from IFM campus",
-      price: "85,000",
+      title: 'Student Hostel at Mikocheni',
+      location: '10 minutes from IFM campus',
+      price: '85,000',
       rating: 4.5,
       reviews: 18,
-      image: "/appartments.jpeg"
+      image: '/appartments.jpeg',
     },
     {
-      title: "Shared Accommodation in Ubungo",
-      location: "Walking distance to DIT",
-      price: "65,000",
+      title: 'Shared Accommodation in Ubungo',
+      location: 'Walking distance to DIT',
+      price: '65,000',
       rating: 4.6,
       reviews: 32,
-      image: "/appartments.jpeg"
-    }
+      image: '/appartments-1.jpg',
+    },
   ];
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Header */}
+    <div className="min-h-screen flex flex-col bg-background text-foreground">
       <Header />
       <main>
         {/* Hero Section */}
-        <section className="py-12 md:py-16 bg-white">
+        <Hero/>
+        <section id="home" className="py-16 md:py-24 bg-gradient-to-b from-card to-muted">
           <div className="container mx-auto px-4">
-            <div className="flex flex-col md:flex-row items-center">
-              <motion.div 
-                className="w-full md:w-1/2 mb-8 md:mb-0"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6 }}
-              >
+            <div className="flex flex-col md:flex-row items-center gap-8">
+              <motion.div className="w-full md:w-1/2" variants={fadeIn} initial="initial" whileInView="whileInView">
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-                  Search, explore and <span className="text-blue-600">book your room!</span>
+                  Search, explore and <span className="text-primary">book your room!</span>
                 </h1>
-                <p className="text-lg md:text-xl text-gray-700 mb-8">
-                  Join thousands of students who found their ideal accommodation with CampusStay. 
-                  Verified listings, secure booking, and a stress-free housing experience.
+                <p className="text-lg md:text-xl text-muted-foreground mb-8">
+                  Join thousands of students who found their ideal accommodation with CampusStay. Verified listings,
+                  secure booking, and a stress-free housing experience.
                 </p>
-                
-                {/* Search Bar */}
-                <div className="bg-white rounded-full shadow-md flex items-center p-2 mb-8">
-                  <Search className="mx-3 text-gray-400" />
-                  <Input 
-                    type="text" 
-                    placeholder="Search by city, university or property" 
-                    className="border-0 focus:ring-0"
+                <div className="bg-card rounded-full shadow-lg flex items-center p-2 mb-8 border border-border">
+                  <Search className="mx-3 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search by city, university or property"
+                    className="border-0 focus:ring-0 bg-transparent"
                   />
-                  <Button size="sm" className="rounded-full bg-blue-600 hover:bg-blue-700">
+                  <Button size="sm" className="btn-primary rounded-full">
                     <Search className="h-5 w-5" />
                   </Button>
                 </div>
-
-                {/* Stats */}
-                <div className="flex justify-between mb-8">
-                  <div className="text-center">
-                    <p className="text-blue-600 font-bold text-xl">10+ years</p>
-                    <p className="text-sm text-gray-500">Experience</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-blue-600 font-bold text-xl">20+</p>
-                    <p className="text-sm text-gray-500">Cities</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-blue-600 font-bold text-xl">1000+</p>
-                    <p className="text-sm text-gray-500">Properties</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-blue-600 font-bold text-xl">400+</p>
-                    <p className="text-sm text-gray-500">Brokers</p>
-                  </div>
-                </div>
+                <motion.div
+                  className="grid grid-cols-2 md:grid-cols-4 gap-6"
+                  variants={staggerContainer}
+                  initial="initial"
+                  whileInView="whileInView"
+                >
+                  {[
+                    { value: '10+ years', label: 'Experience' },
+                    { value: '20+', label: 'Cities' },
+                    { value: '1000+', label: 'Properties' },
+                    { value: '400+', label: 'Brokers' },
+                  ].map((stat, index) => (
+                    <motion.div key={index} variants={fadeIn} className="text-center">
+                      <p className="text-primary font-bold text-xl">{stat.value}</p>
+                      <p className="text-sm text-muted-foreground">{stat.label}</p>
+                    </motion.div>
+                  ))}
+                </motion.div>
               </motion.div>
-              
-              <motion.div 
+              <motion.div
                 className="w-full md:w-1/2"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
+                variants={scaleIn}
+                initial="initial"
+                whileInView="whileInView"
               >
-                <div className="relative rounded-xl overflow-hidden shadow-xl">
-                  <div className="aspect-w-16 aspect-h-9 h-80">
-                    <Image
-                      src="/images/placeholder.jpg" 
-                      width={600}
-                      height={400}
-                      alt="Student searching for accommodation" 
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+                <div className="relative rounded-xl overflow-hidden shadow-2xl">
+                  <Image
+                    src="/student-room.jpg"
+                    width={600}
+                    height={400}
+                    alt="Student searching for accommodation"
+                    className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500"
+                  />
                 </div>
               </motion.div>
             </div>
           </div>
         </section>
-        
-        {/* Student Accommodations Section */}
-        <section className="py-12 bg-gray-50">
+
+        {/* Featured Listings Section */}
+        <section id="listings" className="py-16 bg-muted">
           <div className="container mx-auto px-4">
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="text-2xl font-bold">Student Accommodation Students Love</h2>
-              <Button variant="outline" size="sm" className="rounded-full">
+            <motion.div
+              className="flex justify-between items-center mb-8"
+              variants={fadeIn}
+              initial="initial"
+              whileInView="whileInView"
+            >
+              <h2 className="text-3xl font-bold">Student Accommodations Students Love</h2>
+              <Button variant="outline" size="sm" className="rounded-full hover:bg-primary hover:text-primary-foreground">
                 View all <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-            </div>
-            
-            {/* Location Pills */}
-            <div className="flex flex-wrap gap-2 mb-8">
-              <span className="bg-black text-white px-4 py-1 rounded-full text-sm">All Regions</span>
-              <span className="bg-white border border-gray-200 px-4 py-1 rounded-full text-sm">Dar es Salaam</span>
-              <span className="bg-white border border-gray-200 px-4 py-1 rounded-full text-sm">Morogoro</span>
-              <span className="bg-white border border-gray-200 px-4 py-1 rounded-full text-sm">Dodoma</span>
-              <span className="bg-white border border-gray-200 px-4 py-1 rounded-full text-sm">Arusha</span>
-              <span className="bg-white border border-gray-200 px-4 py-1 rounded-full text-sm">Mwanza</span>
-            </div>
-            
-            {/* Featured Listings */}
-            <motion.div 
+            </motion.div>
+            <motion.div
+              className="flex flex-wrap gap-2 mb-8"
+              variants={staggerContainer}
+              initial="initial"
+              whileInView="whileInView"
+            >
+              {['All Regions', 'Dar es Salaam', 'Morogoro', 'Dodoma', 'Arusha', 'Mwanza'].map((region, index) => (
+                <motion.span
+                  key={index}
+                  variants={fadeIn}
+                  className={`px-4 py-1 rounded-full text-sm cursor-pointer transition-colors duration-300 ${
+                    index === 0
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-card border border-border hover:bg-primary/10'
+                  }`}
+                >
+                  {region}
+                </motion.span>
+              ))}
+            </motion.div>
+            <motion.div
               className="grid grid-cols-1 md:grid-cols-3 gap-6"
               variants={staggerContainer}
               initial="initial"
-              whileInView="animate"
-              viewport={{ once: true }}
+              whileInView="whileInView"
             >
               {featuredListings.map((listing, index) => (
-                <motion.div 
+                <motion.div
                   key={index}
-                  variants={fadeIn}
-                  className="bg-white rounded-xl overflow-hidden shadow-md"
+                  variants={scaleIn}
+                  className="bg-card rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300"
                 >
                   <div className="relative">
-                    <Image 
-                      src={listing.image} 
+                    <Image
+                      src={listing.image}
                       width={400}
                       height={250}
-                      alt={listing.title} 
-                      className="w-full h-48 object-cover"
+                      alt={listing.title}
+                      className="w-full h-48 object-cover transform hover:scale-105 transition-transform duration-500"
                     />
-                    <div className="absolute top-3 right-3 bg-blue-600 text-white px-2 py-1 rounded text-xs">
-                      {4}photos
+                    <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-2 py-1 rounded text-xs">
+                      5 photos
                     </div>
                   </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold text-lg mb-1">{listing.title}</h3>
-                    <p className="text-sm text-gray-600 mb-2">{listing.location}</p>
-                    <div className="flex items-center mb-3">
+                  <div className="p-6">
+                    <h3 className="font-semibold text-lg mb-2">{listing.title}</h3>
+                    <p className="text-sm text-muted-foreground mb-3">{listing.location}</p>
+                    <div className="flex items-center mb-4">
                       <Star className="h-4 w-4 text-yellow-400" fill="currentColor" />
                       <span className="text-sm ml-1">{listing.rating}</span>
-                      <span className="text-xs text-gray-500 ml-1">({listing.reviews} reviews)</span>
+                      <span className="text-xs text-muted-foreground ml-1">({listing.reviews} reviews)</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <div>
-                        <span className="text-gray-500 text-xs">From</span>
-                        <p className="font-bold">TZS {listing.price} <span className="text-gray-500 font-normal text-xs">/ month</span></p>
+                        <span className="text-muted-foreground text-xs">From</span>
+                        <p className="font-bold">
+                          TZS {listing.price} <span className="text-muted-foreground font-normal text-xs">/ month</span>
+                        </p>
                       </div>
-                      <Button size="sm" className="bg-blue-600 hover:bg-blue-700">View Details</Button>
+                      <Button size="sm" className="btn-primary">
+                        View Details
+                      </Button>
                     </div>
                   </div>
                 </motion.div>
@@ -212,290 +226,343 @@ export default function HomePage() {
             </motion.div>
           </div>
         </section>
-        
+
         {/* Top Universities Section */}
-        <section className="py-12 bg-white">
+        <section id="universities" className="py-16 bg-card">
           <div className="container mx-auto px-4">
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="text-2xl font-bold">Top Universities</h2>
-              <Button variant="outline" size="sm" className="rounded-full">
+            <motion.div
+              className="flex justify-between items-center mb-8"
+              variants={fadeIn}
+              initial="initial"
+              whileInView="whileInView"
+            >
+              <h2 className="text-3xl font-bold">Top Universities</h2>
+              <Button variant="outline" size="sm" className="rounded-full hover:bg-primary hover:text-primary-foreground">
                 View all <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-            </div>
-            
-            <div className="flex flex-wrap gap-4 justify-center mb-8">
+            </motion.div>
+            <motion.div
+              className="flex flex-wrap gap-4 justify-center mb-12"
+              variants={staggerContainer}
+              initial="initial"
+              whileInView="whileInView"
+            >
               {topUniversities.map((university, index) => (
-                <Button 
-                  key={index} 
-                  variant="outline" 
-                  className="border border-gray-200 rounded-md text-sm px-4 py-2"
-                >
-                  {university.name}
-                </Button>
+                <motion.div key={index} variants={fadeIn}>
+                  <Button
+                    variant="outline"
+                    className="border border-border rounded-lg text-sm px-6 py-3 hover:bg-primary hover:text-primary-foreground transition-colors duration-300"
+                  >
+                    {university.name}
+                  </Button>
+                </motion.div>
               ))}
-            </div>
-            
-            {/* University Accommodation Examples */}
-            <motion.div 
+            </motion.div>
+            <motion.div
+              className="grid grid-cols-1 md:grid-cols-3 gap-6"
+              variants={staggerContainer}
+              initial="initial"
+              whileInView="whileInView"
+            >
+              {[
+                {
+                  title: 'Shared Accommodation in City Center',
+                  location: '5 minute walk to University of Dar es Salaam',
+                  price: '65,000',
+                },
+                {
+                  title: 'UDSM Student Living',
+                  location: '2 minute walk to University of Dar es Salaam',
+                  price: '75,000',
+                },
+                {
+                  title: 'IFM Student Living Top Floor',
+                  location: 'On campus at IFM',
+                  price: '85,000',
+                },
+              ].map((listing, index) => (
+                <motion.div
+                  key={index}
+                  variants={scaleIn}
+                  className="bg-card rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300"
+                >
+                  <Image
+                    src="/images/placeholder.jpg"
+                    width={400}
+                    height={250}
+                    alt={listing.title}
+                    className="w-full h-48 object-cover transform hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="p-6">
+                    <h3 className="font-semibold text-lg mb-2">{listing.title}</h3>
+                    <p className="text-sm text-muted-foreground mb-3">{listing.location}</p>
+                    <div>
+                      <span className="text-muted-foreground text-xs">From</span>
+                      <p className="font-bold">
+                        TZS {listing.price} <span className="text-muted-foreground font-normal text-xs">/ month</span>
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Broker Section */}
+        <section id="brokers" className="py-16 bg-gradient-to-b from-emerald-50 to-emerald-100">
+          <div className="container mx-auto px-4">
+            <motion.div
+              className="text-center mb-12"
+              variants={fadeIn}
+              initial="initial"
+              whileInView="whileInView"
+            >
+              <h2 className="text-3xl font-bold mb-4">
+                Join CampusStay as a <span className="text-primary">Broker</span>
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                Partner with us to list your properties, reach thousands of students, and grow your business with ease.
+              </p>
+            </motion.div>
+            <motion.div
               className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12"
               variants={staggerContainer}
               initial="initial"
-              whileInView="animate"
-              viewport={{ once: true }}
+              whileInView="whileInView"
             >
-              <motion.div variants={fadeIn} className="bg-white rounded-xl overflow-hidden shadow-md">
-                <Image 
-                  src="/images/placeholder.jpg" 
-                  width={400}
-                  height={250}
-                  alt="Shared Accommodation" 
-                  className="w-full h-48 object-cover"
-                />
-                <div className="p-4">
-                  <h3 className="font-semibold">Shared Accommodation in City Center</h3>
-                  <p className="text-sm text-gray-600">5 minute walk to University of Dar es Salaam</p>
-                  <div className="mt-2">
-                    <span className="text-gray-500 text-xs">From</span>
-                    <p className="font-bold">TZS 65,000 <span className="text-gray-500 font-normal text-xs">/ month</span></p>
+              {[
+                {
+                  icon: <Users className="text-emerald-600" />,
+                  title: 'Wide Audience',
+                  description: 'Access a large pool of students searching for accommodations near universities.',
+                },
+                {
+                  icon: <DollarSign className="text-emerald-600" />,
+                  title: 'Hassle-Free Earnings',
+                  description: 'List properties effortlessly and earn competitive commissions with secure payments.',
+                },
+                {
+                  icon: <BarChart className="text-emerald-600" />,
+                  title: 'Grow Your Business',
+                  description: 'Leverage our platform’s tools to manage listings and track performance.',
+                },
+              ].map((benefit, index) => (
+                <motion.div
+                  key={index}
+                  variants={scaleIn}
+                  className="bg-card p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
+                >
+                  <div className="bg-emerald-200 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+                    {benefit.icon}
                   </div>
+                  <h3 className="text-lg font-semibold mb-2">{benefit.title}</h3>
+                  <p className="text-sm text-muted-foreground">{benefit.description}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+            <motion.div
+              className="text-center"
+              variants={fadeIn}
+              initial="initial"
+              whileInView="whileInView"
+            >
+              <Button className="btn-primary rounded-full text-lg px-8 py-3">
+                Become a Broker <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Booking Process Section */}
+      
+
+        {/* Perfect Room Section */}
+        <section className="py-16 bg-card">
+          <div className="container mx-auto px-4">
+            <motion.div
+              className="flex flex-col md:flex-row items-center mb-12 gap-8"
+              variants={fadeIn}
+              initial="initial"
+              whileInView="whileInView"
+            >
+              <div className="w-full md:w-1/2">
+                <h2 className="text-3xl font-bold mb-4">
+                  We Will Help You Find<br />
+                  Your <span className="text-primary">Perfect Room!</span>
+                </h2>
+              </div>
+              <motion.div
+                className="w-full md:w-1/2"
+                variants={scaleIn}
+                initial="initial"
+                whileInView="whileInView"
+              >
+                <Image
+                  src="/student-room3.jpg"
+                  width={400}
+                  height={300}
+                  alt="Student in room"
+                  className="rounded-xl shadow-lg transform hover:scale-105 transition-transform duration-500"
+                />
+              </motion.div>
+            </motion.div>
+            <motion.div
+              className="grid grid-cols-1 md:grid-cols-3 gap-6"
+              variants={staggerContainer}
+              initial="initial"
+              whileInView="whileInView"
+            >
+              {[
+                {
+                  icon: <Clock className="text-yellow-600" />,
+                  title: 'Price Match Promise',
+                  description:
+                    'Find a lower price elsewhere, and we’ll match it plus pay the difference.',
+                  bg: 'bg-yellow-100',
+                  iconBg: 'bg-yellow-300',
+                },
+                {
+                  icon: <Shield className="text-primary" />,
+                  title: 'Perfect Home Guarantee',
+                  description: 'Enjoy peace of mind with a home that feels just right.',
+                  bg: 'bg-primary/5',
+                  iconBg: 'bg-primary/20',
+                },
+                {
+                  icon: <ArrowRight className="text-emerald-600" />,
+                  title: 'Instant Book Available',
+                  description: 'Book reliable accommodations tailored to your needs instantly.',
+                  bg: 'bg-emerald-50',
+                  iconBg: 'bg-emerald-200',
+                },
+              ].map((feature, index) => (
+                <motion.div
+                  key={index}
+                  variants={scaleIn}
+                  className={`${feature.bg} p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300`}
+                >
+                  <div
+                    className={`${feature.iconBg} w-10 h-10 rounded-full flex items-center justify-center mb-4`}
+                  >
+                    {feature.icon}
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+                  <p className="text-sm text-muted-foreground">{feature.description}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Testimonials Section */}
+        <section className="py-16 bg-muted">
+          <div className="container mx-auto px-4">
+            <motion.h2
+              className="text-3xl font-bold mb-4"
+              variants={fadeIn}
+              initial="initial"
+              whileInView="whileInView"
+            >
+              What <span className="text-primary">Students</span> Say About Us?
+            </motion.h2>
+            <motion.div
+              className="flex items-center mb-8"
+              variants={fadeIn}
+              initial="initial"
+              whileInView="whileInView"
+            >
+              <p className="text-sm mr-2">Excellent</p>
+              <div className="flex">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 text-emerald-500 mr-1" fill="currentColor" />
+                ))}
+              </div>
+              <p className="text-sm ml-2">4.8 out of 5</p>
+            </motion.div>
+            <motion.div
+              className="flex flex-col md:flex-row gap-6"
+              variants={staggerContainer}
+              initial="initial"
+              whileInView="whileInView"
+            >
+              <motion.div className="w-full md:w-1/3" variants={fadeIn}>
+                <div className="flex flex-col space-y-4">
+                  {[
+                    { value: '+2M', alt: 'Total bookings' },
+                    { value: '', alt: 'Student testimonial' },
+                    { value: '', alt: 'Student testimonial' },
+                  ].map((item, index) => (
+                    <motion.div
+                      key={index}
+                      className="bg-card p-4 rounded-xl shadow-sm flex items-center"
+                      variants={scaleIn}
+                    >
+                      <Image
+                        src="/images/placeholder.jpg"
+                        width={60}
+                        height={60}
+                        alt={item.alt}
+                        className="rounded-full mr-4"
+                      />
+                      {item.value && <p className="text-xl font-bold">{item.value}</p>}
+                    </motion.div>
+                  ))}
                 </div>
               </motion.div>
-              <motion.div variants={fadeIn} className="bg-white rounded-xl overflow-hidden shadow-md">
-                <Image 
-                  src="/images/placeholder.jpg" 
-                  width={400}
-                  height={250}
-                  alt="UDSM Student Living" 
-                  className="w-full h-48 object-cover"
-                />
-                <div className="p-4">
-                  <h3 className="font-semibold">UDSM Student Living</h3>
-                  <p className="text-sm text-gray-600">2 minute walk to University of Dar es Salaam</p>
-                  <div className="mt-2">
-                    <span className="text-gray-500 text-xs">From</span>
-                    <p className="font-bold">TZS 75,000 <span className="text-gray-500 font-normal text-xs">/ month</span></p>
+              <motion.div className="w-full md:w-2/3" variants={fadeIn}>
+                <div className="bg-yellow-50 p-6 rounded-xl border border-emerald-100 shadow-lg">
+                  <div className="flex justify-between mb-4">
+                    <div className="flex">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className="w-5 h-5 text-emerald-500 mr-1" fill="currentColor" />
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-              <motion.div variants={fadeIn} className="bg-white rounded-xl overflow-hidden shadow-md">
-                <Image 
-                  src="/images/placeholder.jpg" 
-                  width={400}
-                  height={250}
-                  alt="IFM Student Living" 
-                  className="w-full h-48 object-cover"
-                />
-                <div className="p-4">
-                  <h3 className="font-semibold">IFM Student Living Top Floor</h3>
-                  <p className="text-sm text-gray-600">On campus at IFM</p>
-                  <div className="mt-2">
-                    <span className="text-gray-500 text-xs">From</span>
-                    <p className="font-bold">TZS 85,000 <span className="text-gray-500 font-normal text-xs">/ month</span></p>
+                  <p className="text-lg font-medium mb-4">"The process was very fast and..."</p>
+                  <p className="text-muted-foreground mb-6">
+                    I was looking for a place to stay while studying and found a few hours to kill when the booking. The
+                    process was simple in case was responsive and always friendly.
+                  </p>
+                  <div className="flex items-center">
+                    <div className="bg-primary/20 w-10 h-10 rounded-full flex items-center justify-center mr-3">
+                      <span className="text-primary font-bold">JM</span>
+                    </div>
+                    <div>
+                      <p className="font-medium">John M.</p>
+                      <p className="text-sm text-muted-foreground">June 15</p>
+                    </div>
                   </div>
                 </div>
               </motion.div>
             </motion.div>
           </div>
         </section>
-        {/* Booking Process Section */}
-        <section className="py-16 bg-gradient-to-b from-yellow-100 to-yellow-50">
-          <div className="container mx-auto px-4">
-            <h2 className="text-2xl font-bold mb-2">Booking <span className="text-indigo-600">Process</span></h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-              <div className="flex flex-col items-center">
-                <div className="bg-white rounded-full w-12 h-12 flex items-center justify-center mb-4 shadow-md">
-                  <MapPin className="text-indigo-600" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Step 1</h3>
-                <p className="font-bold mb-1">Explore your city</p>
-                <p className="text-sm text-center text-gray-600">
-                  Discover the accommodation options available in your city. We offer no plan fee for all students.
-                </p>
-              </div>
-              
-              <div className="flex flex-col items-center">
-                <div className="bg-white rounded-full w-12 h-12 flex items-center justify-center mb-4 shadow-md">
-                  <Search className="text-indigo-600" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Step 2</h3>
-                <p className="font-bold mb-1">Submit an application</p>
-                <p className="text-sm text-center text-gray-600">
-                  Apply for the properties that interest you. We'll be with you every step of the way to guide you through your placement.
-                </p>
-              </div>
-              
-              <div className="flex flex-col items-center">
-                <div className="bg-white rounded-full w-12 h-12 flex items-center justify-center mb-4 shadow-md">
-                  <Check className="text-indigo-600" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Step 3</h3>
-                <p className="font-bold mb-1">Confirm your booking</p>
-                <p className="text-sm text-center text-gray-600">
-                  Select deposit and pay your fees securely. Our team is on hand to answer any questions at all.
-                </p>
-              </div>
-            </div>
-            
-            <div className="text-center mt-8">
-              <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-full">
-                Start Now <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-        </section>
-        
-        {/* Perfect Room Section */}
-        <section className="py-16 bg-white">
-          <div className="container mx-auto px-4">
-            <div className="flex flex-col md:flex-row items-center mb-10">
-              <div className="w-full md:w-1/2 mb-8 md:mb-0">
-                <h2 className="text-2xl font-bold mb-2">We Will Help You Find<br />Your <span className="text-indigo-600">Perfect Room!</span></h2>
-              </div>
-              
-              <div className="w-full md:w-1/2 md:pl-8">
-                <Image 
-                  src="/images/placeholder.jpg" 
-                  width={400}
-                  height={300}
-                  alt="Student in room" 
-                  className="rounded-xl"
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-yellow-100 p-6 rounded-xl">
-                <div className="bg-yellow-300 w-10 h-10 rounded-full flex items-center justify-center mb-4">
-                  <Clock className="text-yellow-800" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Price Match Promise</h3>
-                <p className="text-sm text-gray-700">
-                  If you find accommodation elsewhere at a lower price, we will match this price and pay you the difference.
-                </p>
-              </div>
-              
-              <div className="bg-indigo-50 p-6 rounded-xl">
-                <div className="bg-indigo-200 w-10 h-10 rounded-full flex items-center justify-center mb-4">
-                  <Shield className="text-indigo-600" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Perfect Home Guarantee</h3>
-                <p className="text-sm text-gray-700">
-                  We want to give you a peace of mind during your stay at your home away from home.
-                </p>
-              </div>
-              
-              <div className="bg-emerald-50 p-6 rounded-xl">
-                <div className="bg-emerald-200 w-10 h-10 rounded-full flex items-center justify-center mb-4">
-                  <ArrowRight className="text-emerald-600" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Instant Book Available</h3>
-                <p className="text-sm text-gray-700">
-                  We work with most reliable housing options to ensure accommodations listed have been carefully matched to your needs.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-        
-        {/* Testimonials Section */}
-        <section className="py-16 bg-gray-50">
-          <div className="container mx-auto px-4">
-            <h2 className="text-2xl font-bold mb-2">What <span className="text-indigo-600">Students</span> Say About Us?</h2>
-            <div className="flex items-center mb-4">
-              <p className="text-sm mr-2">Excellent</p>
-              <div className="flex">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 text-green-500 mr-1" fill="currentColor" />
-                ))}
-              </div>
-              <p className="text-sm ml-2">4.8 out of 5</p>
-            </div>
-            
-            <div className="flex flex-col md:flex-row gap-6">
-              <div className="w-full md:w-1/3">
-                <div className="flex flex-col space-y-4">
-                  <div className="bg-white p-4 rounded-xl shadow-sm flex items-center">
-                    <Image 
-                      src="/images/placeholder.jpg" 
-                      width={60}
-                      height={60}
-                      alt="Student testimonial" 
-                      className="rounded-full mr-4"
-                    />
-                    <p className="text-xl font-bold">+2M</p>
-                  </div>
-                  
-                  <div className="bg-white p-4 rounded-xl shadow-sm">
-                    <Image 
-                      src="/images/placeholder.jpg" 
-                      width={60}
-                      height={60}
-                      alt="Student testimonial" 
-                      className="rounded-full mb-2"
-                    />
-                  </div>
-                  
-                  <div className="bg-white p-4 rounded-xl shadow-sm">
-                    <Image 
-                      src="/images/placeholder.jpg" 
-                      width={60}
-                      height={60}
-                      alt="Student testimonial" 
-                      className="rounded-full mb-2"
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              <div className="w-full md:w-2/3">
-                <div className="bg-yellow-50 p-6 rounded-xl border border-green-100">
-                  <div className="flex justify-between mb-4">
-                    <div className="flex">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="w-5 h-5 text-green-500 mr-1" fill="currentColor" />
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <p className="text-lg font-medium mb-4">"The process was very fast and..."</p>
-                  <p className="text-gray-700 mb-6">
-                    I was looking for a place to stay while studying and found a few hours to kill when the booking. The process was simple in case was responsive and always friendly.
-                  </p>
-                  
-                  <div className="flex items-center">
-                    <div className="bg-pink-100 w-10 h-10 rounded-full flex items-center justify-center mr-3">
-                      <span className="text-pink-600 font-bold">JM</span>
-                    </div>
-                    <div>
-                      <p className="font-medium">John M.</p>
-                      <p className="text-sm text-gray-500">June 15</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-        
+
         {/* CTA Section */}
-        <section className="py-16 bg-blue-600">
+        <section id="contact" className="py-16 bg-primary">
           <div className="container mx-auto px-4">
-            <motion.div 
+            <motion.div
               className="max-w-3xl mx-auto text-center"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              viewport={{ once: true }}
+              variants={fadeIn}
+              initial="initial"
+              whileInView="whileInView"
             >
-              <h2 className="text-3xl md:text-4xl font-bold mb-6 text-white">Ready to Find Your Perfect Campus Stay?</h2>
-              <p className="text-xl text-blue-100 mb-8">
+              <h2 className="text-3xl md:text-4xl font-bold mb-6 text-primary-foreground">
+                Ready to Find Your Perfect Campus Stay?
+              </h2>
+              <p className="text-xl text-primary-foreground/80 mb-8">
                 Join thousands of students who have found their ideal accommodation near campus.
               </p>
               <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-                <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
+                <Button size="lg" className="bg-card text-primary hover:bg-card/90">
                   Get Started <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
-                <Button size="lg" variant="outline" className="border-white text-white hover:bg-blue-700">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="border-card text-card hover:bg-card hover:text-primary"
+                >
                   Learn More
                 </Button>
               </div>
