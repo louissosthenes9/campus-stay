@@ -6,7 +6,7 @@ import {
     ArrowRight,
     Check,
   } from 'lucide-react';
-export default function Hero() {
+export default function BookingProcess() {
     const fadeIn = {
         initial: { opacity: 0, y: 20 },
         whileInView: { opacity: 1, y: 0 },
