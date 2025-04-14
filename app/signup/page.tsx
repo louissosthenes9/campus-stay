@@ -63,7 +63,7 @@ type FormData = z.infer<typeof formSchema>;
     mobile: string;
     user_type: "student" | "broker" | "admin";
     student_profile?: {
-      university: string | undefined;
+      university: number | undefined;
       course: string | undefined;
     };
     broker_profile?: {
@@ -190,8 +190,6 @@ export default function Page() {
     // Map the property_owner type to broker for API compatibility
     const userTypeForApi = data.user_type === "broker" ? "broker" : data.user_type;
     
- 
-    
     // Create a properly structured data object for the API
     const registerData: RegisterData = {
       username: data.username,
@@ -203,10 +201,10 @@ export default function Page() {
       user_type: userTypeForApi as "student" | "broker" | "admin",
     };
     
-    // Add student_profile as a proper nested object
+    // Add student_profile as a proper nested object with university as a number
     if (data.user_type === "student") {
       registerData.student_profile = {
-        university: data.university,
+        university: parseInt(data.university || "0", 10) || 1, // Convert to number and ensure a valid value
         course: data.course || "Undeclared"
       };
     }
@@ -218,8 +216,7 @@ export default function Page() {
       };
     }
 
-    console.log("Registering user with data:", registerData);
-    console.log("form data:", data);
+    console.log("Registering user with data:", JSON.stringify(registerData));
     
     const success = await registerUser(registerData);
     
