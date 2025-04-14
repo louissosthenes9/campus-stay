@@ -2,6 +2,6 @@
 
 export default function page() {
   return (
-    <div>page</div>
+    <div>login page</div>
   )
 }
