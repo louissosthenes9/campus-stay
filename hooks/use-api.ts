@@ -9,19 +9,20 @@ interface ApiResponse<T = any> {
 }
 
 export default function useApi() {
-    /** 
-     * Perform an API request using axios.
-     * @param method - The HTTP method (GET, POST, PUT, PATCH, DELETE).
-     * @param endpoint - The API endpoint to call.
-     * @param data - The data to send with the request (optional).
-     * @param headers - Additional headers to include with the request (optional).
-     * @returns A promise that resolves to the API response.
-     */
+  /** 
+   * Perform an API request using axios.
+   * @param method - The HTTP method (GET, POST, PUT, PATCH, DELETE).
+   * @param endpoint - The API endpoint to call.
+   * @param data - The data to send with the request (optional).
+   * @param headers - Additional headers to include with the request (optional).
+   * @returns A promise that resolves to the API response.
+   */
   const performRequest = async <T>(
     method: string,
     endpoint: string,
     data?: object,
-    headers: object = {}
+    headers: object = {},
+    contentType: string = "application/json" // Add default content type parameter
   ): Promise<ApiResponse<T>> => {
     // Ensure BASE_URL is defined
     if (!BASE_URL) {
@@ -36,18 +37,38 @@ export default function useApi() {
 
     const url = `${BASE_URL}${endpoint}`;
     console.log(`Making ${method} request to: ${url}`);
-    
+
     const config: AxiosRequestConfig = {
       method,
       url,
       headers: {
-        "Content-Type": method === "GET" ? "application/json" : "multipart/form-data",
+        "Content-Type": contentType, // Use the provided content type
         ...headers,
       },
     };
 
     if (data && method !== "GET") {
-      config.data = data;
+      // Format the data based on content type
+      if (contentType === "multipart/form-data") {
+        const formData = new FormData();
+
+        // Convert data to FormData if needed
+        Object.entries(data).forEach(([key, value]) => {
+          // Handle nested objects for student_profile and broker_profile
+          if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+            Object.entries(value).forEach(([nestedKey, nestedValue]) => {
+              formData.append(`${key}.${nestedKey}`, nestedValue as string);
+            });
+          } else {
+            formData.append(key, value as string);
+          }
+        });
+
+        config.data = formData;
+      } else {
+        // For JSON content type
+        config.data = data;
+      }
     } else if (data && method === "GET") {
       config.params = data;
     }
@@ -70,6 +91,14 @@ export default function useApi() {
     }
   };
 
+  const performPostRequest = <T>(
+    endpoint: string,
+    data: object,
+    headers: object = {},
+    contentType: string = "application/json" // Default to JSON
+  ) => {
+    return performRequest<T>("POST", endpoint, data, headers, contentType);
+  };
   const performGetRequest = <T>(
     endpoint: string,
     params?: object,
@@ -78,13 +107,6 @@ export default function useApi() {
     return performRequest<T>("GET", endpoint, params, headers);
   };
 
-  const performPostRequest = <T>(
-    endpoint: string,
-    data: object,
-    headers: object = {}
-  ) => {
-    return performRequest<T>("POST", endpoint, data, headers);
-  };
 
   const performPutRequest = <T>(
     endpoint: string,

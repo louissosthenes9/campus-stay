@@ -177,13 +177,15 @@ export default function useAuth() {
   const register = async (registerData: RegisterData) => {
     setLoading(true);
     setError(null);
-  console.log(process.env.BASE_API_URL)
-
+    console.log("Registering with data:", JSON.stringify(registerData));
+  
     const response = await performPostRequest<{ refresh: string; access: string; user: User }>(
       '/users/',
-      registerData
+      registerData,
+      {},
+      "application/json" // Explicitly set content type to JSON
     );
-
+  
     if (response.success) {
       setTokens({
         access: response.data.access,
@@ -198,7 +200,6 @@ export default function useAuth() {
       return false;
     }
   };
-
   // Google login function
   const googleLogin = async (token: string) => {
     setLoading(true);

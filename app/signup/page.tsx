@@ -109,30 +109,6 @@ export default function Page() {
           "harvard": [
             { id: "harvard-main", name: "Cambridge Main Campus" },
             { id: "harvard-medical", name: "Longwood Medical Area" }
-          ],
-          "mit": [
-            { id: "mit-main", name: "Cambridge Campus" },
-            { id: "mit-sloan", name: "Sloan Campus" }
-          ],
-          "stanford": [
-            { id: "stanford-main", name: "Main Campus" },
-            { id: "stanford-medical", name: "Medical Center" }
-          ],
-          "oxford": [
-            { id: "oxford-central", name: "Central Oxford" },
-            { id: "oxford-science", name: "Science Area" }
-          ],
-          "cambridge": [
-            { id: "cambridge-central", name: "City Center" },
-            { id: "cambridge-west", name: "West Cambridge" }
-          ],
-          "ucla": [
-            { id: "ucla-main", name: "Westwood Campus" },
-            { id: "ucla-medical", name: "Medical Center" }
-          ],
-          "berkeley": [
-            { id: "berkeley-main", name: "Main Campus" },
-            { id: "berkeley-clark", name: "Clark Kerr Campus" }
           ]
         };
         
