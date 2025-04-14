@@ -23,7 +23,19 @@ export default function useApi() {
     data?: object,
     headers: object = {}
   ): Promise<ApiResponse<T>> => {
+    // Ensure BASE_URL is defined
+    if (!BASE_URL) {
+      console.error("API Base URL is undefined");
+      return {
+        data: {} as T,
+        status: 500,
+        success: false,
+        error: "API configuration error: Base URL is undefined"
+      };
+    }
+
     const url = `${BASE_URL}${endpoint}`;
+    console.log(`Making ${method} request to: ${url}`);
     
     const config: AxiosRequestConfig = {
       method,

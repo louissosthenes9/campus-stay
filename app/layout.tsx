@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";  // Fixed import path to use the global CSS
-
 // Initialize the Inter font
 const inter = Inter({ 
   subsets: ['latin'],
@@ -30,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang={"en"} className={inter.variable}>
       <body className="min-h-screen flex flex-col">
-        {children}
+            {children}
       </body>
     </html>
   );

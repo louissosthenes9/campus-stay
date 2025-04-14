@@ -48,12 +48,18 @@ export default function Header() {
 
           {/* Auth Buttons (Desktop) */}
           <div className="hidden md:flex items-center space-x-3">
-            <Button variant="outline" size="sm" className="text-primary border-primary hover:bg-primary/10">
-              Log in
-            </Button>
-            <Button size="sm" className="btn-primary">
-              Sign up
-            </Button>
+            <Link
+            href={"/login"}
+            className='btn-outline text-primary'
+            >
+              sign in
+            </Link>
+            <Link
+              href={"/signup"}
+              className="btn-primary text-white"
+              >
+                signup
+              </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -88,10 +94,14 @@ export default function Header() {
               ))}
             </nav>
             <div className="flex flex-col space-y-3 mt-4 pt-4 border-t border-border">
-              <Button variant="outline" className="w-full text-primary border-primary hover:bg-primary/10">
+              <Button 
+              variant="outline" 
+              className="w-full text-primary border-primary hover:bg-primary/10 hover:text-indigo-500">
                 Log in
               </Button>
-              <Button className="w-full btn-primary">Sign up</Button>
+              <Link 
+              href="/signup"
+              className="w-full btn-primary">Sign up</Link>
             </div>
           </motion.div>
         )}

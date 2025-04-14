@@ -177,6 +177,7 @@ export default function useAuth() {
   const register = async (registerData: RegisterData) => {
     setLoading(true);
     setError(null);
+  console.log(process.env.BASE_API_URL)
 
     const response = await performPostRequest<{ refresh: string; access: string; user: User }>(
       '/users/',
