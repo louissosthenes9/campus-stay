@@ -89,14 +89,33 @@ export default function useAuth() {
     return tokens ? { 'Authorization': `Bearer ${tokens.access}` } : {};
   }, [getTokens]);
 
+  // Token refresh
+  const refreshToken = useCallback(async (): Promise<boolean> => {
+    const tokens = getTokens();
+    if (!tokens?.refresh) return false;
+
+    const response = await performPostRequest<{ access: string }>('/token/refresh/', {
+      refresh: tokens.refresh
+    });
+
+    if (response.success && response.data.access) {
+      localStorage.setItem('access_token', response.data.access);
+      return true;
+    }
+    
+    return false;
+  }, [getTokens, performPostRequest]);
+
   // User fetching
   const fetchCurrentUser = useCallback(async () => {
+    // Check authentication status first
     if (!isAuthenticated()) {
       setUser(null);
-      setLoading(false);
+      setLoading(false); // Ensure loading is false if not authenticated
       return;
     }
 
+    // Set loading state only if we proceed with the fetch
     setLoading(true);
     setError(null);
 
@@ -129,24 +148,7 @@ export default function useAuth() {
     }
 
     setLoading(false);
-  }, [performGetRequest, authHeaders, isAuthenticated, clearTokens]);
-
-  // Token refresh
-  const refreshToken = useCallback(async (): Promise<boolean> => {
-    const tokens = getTokens();
-    if (!tokens?.refresh) return false;
-
-    const response = await performPostRequest<{ access: string }>('/token/refresh/', {
-      refresh: tokens.refresh
-    });
-
-    if (response.success && response.data.access) {
-      localStorage.setItem('access_token', response.data.access);
-      return true;
-    }
-    
-    return false;
-  }, [getTokens, performPostRequest]);
+  }, [performGetRequest, authHeaders, isAuthenticated, clearTokens, refreshToken]); // Added refreshToken dependency
 
   // Login function
   const login = async (credentials: LoginCredentials) => {
@@ -264,10 +266,17 @@ export default function useAuth() {
     setUser(null);
   }, [clearTokens]);
 
-  // Check authentication status on mount
+  // Check authentication status on mount only if tokens exist
   useEffect(() => {
-    fetchCurrentUser();
-  }, [fetchCurrentUser]);
+    if (isAuthenticated()) {
+      fetchCurrentUser();
+    } else {
+      // Explicitly set loading to false if not authenticated on initial load
+      setLoading(false);
+    }
+    // fetchCurrentUser dependency is correct due to useCallback
+    // isAuthenticated dependency ensures this runs if auth state potentially changes externally (though less common)
+  }, [fetchCurrentUser, isAuthenticated]);
 
   return {
     user,
@@ -279,7 +288,7 @@ export default function useAuth() {
     googleLogin,
     completeGoogleOnboarding,
     logout,
-    fetchCurrentUser,
+    fetchCurrentUser, // Expose fetchCurrentUser if needed externally
     authHeaders,
     refreshToken,
   };
