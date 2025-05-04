@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import "./globals.css";  // Fixed import path to use the global CSS
-// Initialize the Inter font
+import "./globals.css";  
+import { Toaster } from "@/components/ui/sonner"
+
+
 const inter = Inter({ 
   subsets: ['latin'],
   display: 'swap',
@@ -29,7 +31,8 @@ export default function RootLayout({
   return (
     <html lang={"en"} className={inter.variable}>
       <body className="min-h-screen flex flex-col">
-            {children}
+        <Toaster />
+         {children}
       </body>
     </html>
   );

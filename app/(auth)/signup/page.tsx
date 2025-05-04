@@ -147,7 +147,7 @@ export default function Page() {
         return ["first_name", "last_name", "mobile", "username", "email", "password", "confirm_password"];
       case 3:
         return userType === "student" 
-          ? ["university", "course"] // Add course to validation
+          ? ["university", "course"] 
           : ["company_name"];
       default:
         return [];
