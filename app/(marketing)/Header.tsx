@@ -95,7 +95,7 @@ export default function Header() {
             </nav>
             <div className="flex flex-col space-y-3 mt-4 pt-4 border-t border-border">
               <Link
-                className='btn-outline text-primary'
+                className='btn-outline text-primary border-2 border-primary'
                 href={"/login"}>
                 login
               </Link>
