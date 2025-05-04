@@ -61,6 +61,7 @@ export default function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [initialized, setInitialized] = useState(false); // Track initial auth check
 
   // Token management functions
   const getTokens = useCallback((): AuthTokens | null => {
@@ -94,82 +95,102 @@ export default function useAuth() {
     const tokens = getTokens();
     if (!tokens?.refresh) return false;
 
-    const response = await performPostRequest<{ access: string }>('/token/refresh/', {
-      refresh: tokens.refresh
-    });
+    try {
+      const response = await performPostRequest<{ access: string }>('/token/refresh/', {
+        refresh: tokens.refresh
+      });
 
-    if (response.success && response.data.access) {
-      localStorage.setItem('access_token', response.data.access);
-      return true;
+      if (response.success && response.data.access) {
+        localStorage.setItem('access_token', response.data.access);
+        return true;
+      }
+    } catch (err) {
+      // Silent fail on refresh error
     }
     
     return false;
   }, [getTokens, performPostRequest]);
 
   // User fetching
-  const fetchCurrentUser = useCallback(async () => {
+  const fetchCurrentUser = useCallback(async (silent = false) => {
     // Check authentication status first
     if (!isAuthenticated()) {
       setUser(null);
-      setLoading(false); // Ensure loading is false if not authenticated
-      return;
+      if (!silent) setLoading(false);
+      return null;
     }
 
-    // Set loading state only if we proceed with the fetch
-    setLoading(true);
+    // Set loading state only if we proceed with the fetch and it's not silent
+    if (!silent) setLoading(true);
     setError(null);
 
-    const response = await performGetRequest<User>('/users/me/', {}, authHeaders());
+    try {
+      const response = await performGetRequest<User>('/users/me/', {}, authHeaders());
 
-    if (response.success) {
-      setUser(response.data);
-    } else {
-      // If token might be expired, try refreshing
-      if (response.status === 401) {
-        const refreshed = await refreshToken();
-        if (refreshed) {
-          // Try fetching user again with new token
-          const retryResponse = await performGetRequest<User>('/users/me/', {}, authHeaders());
-          if (retryResponse.success) {
-            setUser(retryResponse.data);
+      if (response.success) {
+        setUser(response.data);
+        if (!silent) setLoading(false);
+        return response.data;
+      } else {
+        // If token might be expired, try refreshing
+        if (response.status === 401) {
+          const refreshed = await refreshToken();
+          if (refreshed) {
+            // Try fetching user again with new token
+            const retryResponse = await performGetRequest<User>('/users/me/', {}, authHeaders());
+            if (retryResponse.success) {
+              setUser(retryResponse.data);
+              if (!silent) setLoading(false);
+              return retryResponse.data;
+            } else {
+              setUser(null);
+              setError('Session expired. Please login again.');
+              clearTokens();
+            }
           } else {
             setUser(null);
-            setError('Session expired. Please login again.');
             clearTokens();
           }
         } else {
+          setError(response.error || 'Failed to fetch user data');
           setUser(null);
-          clearTokens();
         }
-      } else {
-        setError(response.error || 'Failed to fetch user data');
-        setUser(null);
       }
+    } catch (err) {
+      setError('Network error while fetching user data');
+      setUser(null);
     }
 
-    setLoading(false);
-  }, [performGetRequest, authHeaders, isAuthenticated, clearTokens, refreshToken]); // Added refreshToken dependency
+    if (!silent) setLoading(false);
+    return null;
+  }, [performGetRequest, authHeaders, isAuthenticated, clearTokens, refreshToken]);
 
   // Login function
   const login = async (credentials: LoginCredentials) => {
     setLoading(true);
     setError(null);
 
-    const response = await performPostRequest<{ refresh: string; access: string; user: User }>(
-      '/users/login/',
-      credentials
-    );
+    try {
+      const response = await performPostRequest<{ refresh: string; access: string; user: User }>(
+        '/users/login/',
+        credentials
+      );
 
-    if (response.success) {
-      setTokens({
-        access: response.data.access,
-        refresh: response.data.refresh
-      });
-      setUser(response.data.user);
-      setLoading(false);
-      return true;
-    } else {
-      setError(response.error || 'Login failed');
+      if (response.success && response.data) {
+        setTokens({
+          access: response.data.access,
+          refresh: response.data.refresh
+        });
+        setUser(response.data.user);
+        setLoading(false);
+        return true;
+      } else {
+        setError(response.error || 'Login failed');
+        setLoading(false);
+        return false;
+      }
+    } catch (err) {
+      setError('Network error during login');
       setLoading(false);
       return false;
     }
@@ -179,59 +200,71 @@ export default function useAuth() {
   const register = async (registerData: RegisterData) => {
     setLoading(true);
     setError(null);
-    console.log("Registering with data:", JSON.stringify(registerData));
-  
-    const response = await performPostRequest<{ refresh: string; access: string; user: User }>(
-      '/users/',
-      registerData,
-      {},
-      "application/json" // Explicitly set content type to JSON
-    );
-  
-    if (response.success) {
-      setTokens({
-        access: response.data.access,
-        refresh: response.data.refresh
-      });
-      setUser(response.data.user);
-      setLoading(false);
-      return true;
-    } else {
-      setError(response.error || 'Registration failed');
+    
+    try {
+      const response = await performPostRequest<{ refresh: string; access: string; user: User }>(
+        '/users/',
+        registerData,
+        {},
+        "application/json" // Explicitly set content type to JSON
+      );
+    
+      if (response.success && response.data) {
+        setTokens({
+          access: response.data.access,
+          refresh: response.data.refresh
+        });
+        setUser(response.data.user);
+        setLoading(false);
+        return true;
+      } else {
+        setError(response.error || 'Registration failed');
+        setLoading(false);
+        return false;
+      }
+    } catch (err) {
+      setError('Network error during registration');
       setLoading(false);
       return false;
     }
   };
+
   // Google login function
   const googleLogin = async (token: string) => {
     setLoading(true);
     setError(null);
 
-    const response = await performPostRequest<GoogleLoginResponse>(
-      '/users/google_login/',
-      { token }
-    );
+    try {
+      const response = await performPostRequest<GoogleLoginResponse>(
+        '/users/google_login/',
+        { token }
+      );
 
-    if (response.success) {
-      if (response.data.status === 'success') {
-        // User is authenticated
-        if (response.data.access && response.data.refresh && response.data.user) {
-          setTokens({
-            access: response.data.access,
-            refresh: response.data.refresh
-          });
-          setUser(response.data.user);
-        }
+      if (response.success) {
+        if (response.data.status === 'success') {
+          // User is authenticated
+          if (response.data.access && response.data.refresh && response.data.user) {
+            setTokens({
+              access: response.data.access,
+              refresh: response.data.refresh
+            });
+            setUser(response.data.user);
+          }
+          setLoading(false);
+          return { success: true, data: response.data };
+        } 
+        // User needs to complete onboarding or profile
         setLoading(false);
         return { success: true, data: response.data };
-      } 
-      // User needs to complete onboarding or profile
+      } else {
+        setError(response.error || 'Google login failed');
+        setLoading(false);
+        return { success: false, error: response.error };
+      }
+    } catch (err) {
+      setError('Network error during Google login');
       setLoading(false);
-      return { success: true, data: response.data };
-    } else {
-      setError(response.error || 'Google login failed');
-      setLoading(false);
-      return { success: false, error: response.error };
+      return { success: false, error: 'Network error' };
     }
   };
 
@@ -240,21 +273,27 @@ export default function useAuth() {
     setLoading(true);
     setError(null);
 
-    const response = await performPostRequest<{ refresh: string; access: string; user: User }>(
-      '/users/complete_google_onboarding/',
-      onboardingData
-    );
+    try {
+      const response = await performPostRequest<{ refresh: string; access: string; user: User }>(
+        '/users/complete_google_onboarding/',
+        onboardingData
+      );
 
-    if (response.success) {
-      setTokens({
-        access: response.data.access,
-        refresh: response.data.refresh
-      });
-      setUser(response.data.user);
-      setLoading(false);
-      return true;
-    } else {
-      setError(response.error || 'Failed to complete onboarding');
+      if (response.success && response.data) {
+        setTokens({
+          access: response.data.access,
+          refresh: response.data.refresh
+        });
+        setUser(response.data.user);
+        setLoading(false);
+        return true;
+      } else {
+        setError(response.error || 'Failed to complete onboarding');
+        setLoading(false);
+        return false;
+      }
+    } catch (err) {
+      setError('Network error during onboarding');
       setLoading(false);
       return false;
     }
@@ -266,29 +305,34 @@ export default function useAuth() {
     setUser(null);
   }, [clearTokens]);
 
-  // Check authentication status on mount only if tokens exist
+  // Check authentication status on mount only
   useEffect(() => {
-    if (isAuthenticated()) {
-      fetchCurrentUser();
-    } else {
-      // Explicitly set loading to false if not authenticated on initial load
-      setLoading(false);
-    }
-    // fetchCurrentUser dependency is correct due to useCallback
-    // isAuthenticated dependency ensures this runs if auth state potentially changes externally (though less common)
-  }, [fetchCurrentUser, isAuthenticated]);
+    const checkAuth = async () => {
+      if (isAuthenticated()) {
+        await fetchCurrentUser();
+      } else {
+        setLoading(false);
+      }
+      setInitialized(true);
+    };
+    
+    checkAuth();
+    // This effect should run only once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return {
     user,
     loading,
     error,
     isAuthenticated,
+    initialized,
     login,
     register,
     googleLogin,
     completeGoogleOnboarding,
     logout,
-    fetchCurrentUser, // Expose fetchCurrentUser if needed externally
+    fetchCurrentUser,
     authHeaders,
     refreshToken,
   };

@@ -1,9 +1,9 @@
 'use client';
 
-import { Suspense, useState } from 'react'; // Import Suspense
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -15,7 +15,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from '@/components/ui/separator';
 import { toast } from "sonner"
 import useAuth from '@/hooks/use-auth';
-import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton for fallback
 
 // Form validation schema
 const loginSchema = z.object({
@@ -25,14 +24,13 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-function LoginFormComponent() {
-  const { login, googleLogin, loading } = useAuth();
+export default function LoginPage() {
+  const { login, googleLogin, loading, initialized } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams(); // useSearchParams is now safe here
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  // Get redirect URL from query params or default to dashboard
-  const redirectUrl ='/dashboard';
+  // Get redirect URL or default to dashboard
+  const redirectUrl = '/dashboard';
 
   // Initialize form
   const form = useForm<LoginFormValues>({
@@ -87,155 +85,11 @@ function LoginFormComponent() {
     }
   };
 
-  return (
-    <Card className="shadow-lg">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold text-center">Sign in</CardTitle>
-        <CardDescription className="text-center">
-          Enter your credentials to continue
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <Button 
-          type="button" 
-          variant="outline" 
-          className="w-full flex items-center justify-center gap-2"
-          onClick={handleGoogleSignIn}
-          disabled={googleLoading || loading}
-        >
-          {googleLoading ? (
-            <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <Image
-              src="/google.svg"
-              alt="Google Logo"
-              width={20}
-              height={20}
-              className="h-4 w-4"
-            />
-          )}
-          Sign in with Google
-        </Button>
-        
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <Separator className="w-full" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">
-              Or continue with
-            </span>
-          </div>
-        </div>
+  // Show loading state until auth is initialized
+  if (!initialized) {
+    return <LoginSkeleton />;
+  }
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="username"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Username</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter your username" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="flex items-center justify-end">
-              <Link 
-                href="/forgot-password" 
-                className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
-              >
-                Forgot password?
-              </Link>
-            </div>
-            
-            <Button 
-              type="submit" 
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
-              disabled={loading}
-            >
-              {loading ? (
-                <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-              ) : "Sign in"}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-      <CardFooter className="flex justify-center">
-        <p className="text-sm text-muted-foreground">
-          Don't have an account?{" "}
-          <Link 
-            href="/register" 
-            className="font-medium text-indigo-600 hover:text-indigo-500"
-          >
-            Sign up
-          </Link>
-        </p>
-      </CardFooter>
-    </Card>
-  );
-}
-
-// Loading Skeleton component for Suspense fallback
-function LoginFormSkeleton() {
-  return (
-    <Card className="shadow-lg">
-      <CardHeader className="space-y-1 items-center">
-        <Skeleton className="h-6 w-24 mb-2" />
-        <Skeleton className="h-4 w-48" />
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <Skeleton className="h-10 w-full" />
-        <div className="relative py-2">
-          <div className="absolute inset-0 flex items-center">
-             <Skeleton className="h-px w-full" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">
-              <Skeleton className="h-4 w-20" />
-            </span>
-          </div>
-        </div>
-        <div className="space-y-2">
-           <Skeleton className="h-4 w-16" />
-           <Skeleton className="h-10 w-full" />
-        </div>
-         <div className="space-y-2">
-           <Skeleton className="h-4 w-16" />
-           <Skeleton className="h-10 w-full" />
-        </div>
-        <div className="flex items-center justify-end">
-           <Skeleton className="h-4 w-24" />
-        </div>
-        <Skeleton className="h-10 w-full" />
-      </CardContent>
-      <CardFooter className="flex justify-center">
-         <Skeleton className="h-4 w-48" />
-      </CardFooter>
-    </Card>
-  );
-}
-
-
-export default function LoginPage() {
   return (
     <div className="min-h-screen bg-muted flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -257,10 +111,163 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Wrap the component using useSearchParams with Suspense */}
-        <Suspense fallback={<LoginFormSkeleton />}>
-          <LoginFormComponent />
-        </Suspense>
+        <Card className="shadow-lg">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-bold text-center">Sign in</CardTitle>
+            <CardDescription className="text-center">
+              Enter your credentials to continue
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="w-full flex items-center justify-center gap-2"
+              onClick={handleGoogleSignIn}
+              disabled={googleLoading || loading}
+            >
+              {googleLoading ? (
+                <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Image
+                  src="/google.svg"
+                  alt="Google Logo"
+                  width={20}
+                  height={20}
+                  className="h-4 w-4"
+                />
+              )}
+              Sign in with Google
+            </Button>
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <Separator className="w-full" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Username</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter your username" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="••••••••" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="flex items-center justify-end">
+                  <Link 
+                    href="/forgot-password" 
+                    className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                  ) : "Sign in"}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+          <CardFooter className="flex justify-center">
+            <p className="text-sm text-muted-foreground">
+              Don't have an account?{" "}
+              <Link 
+                href="/register" 
+                className="font-medium text-indigo-600 hover:text-indigo-500"
+              >
+                Sign up
+              </Link>
+            </p>
+          </CardFooter>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// Skeleton component for loading state
+function LoginSkeleton() {
+  return (
+    <div className="min-h-screen bg-muted flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center">
+          <div className="flex justify-center">
+            <div className="h-12 w-12 rounded-full bg-gray-200 animate-pulse" />
+          </div>
+          <div className="mt-6 h-8 bg-gray-200 rounded w-48 mx-auto animate-pulse" />
+          <div className="mt-2 h-4 bg-gray-200 rounded w-64 mx-auto animate-pulse" />
+        </div>
+
+        <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+          <div className="p-6 space-y-4">
+            <div className="space-y-1 items-center">
+              <div className="h-6 bg-gray-200 rounded w-24 mx-auto animate-pulse" />
+              <div className="h-4 bg-gray-200 rounded w-48 mx-auto animate-pulse" />
+            </div>
+            <div className="space-y-4 pt-4">
+              <div className="h-10 bg-gray-200 rounded w-full animate-pulse" />
+              <div className="relative py-2">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="h-px w-full bg-gray-200" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white px-2 text-muted-foreground">
+                    <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="h-4 w-16 bg-gray-200 rounded animate-pulse" />
+                <div className="h-10 w-full bg-gray-200 rounded animate-pulse" />
+              </div>
+              <div className="space-y-2">
+                <div className="h-4 w-16 bg-gray-200 rounded animate-pulse" />
+                <div className="h-10 w-full bg-gray-200 rounded animate-pulse" />
+              </div>
+              <div className="flex items-center justify-end">
+                <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+              </div>
+              <div className="h-10 w-full bg-gray-200 rounded animate-pulse" />
+            </div>
+          </div>
+          <div className="p-4 flex justify-center">
+            <div className="h-4 w-48 bg-gray-200 rounded animate-pulse" />
+          </div>
+        </div>
       </div>
     </div>
   );
