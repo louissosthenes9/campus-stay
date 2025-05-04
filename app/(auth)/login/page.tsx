@@ -25,7 +25,6 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-// Extracted component that uses useSearchParams
 function LoginFormComponent() {
   const { login, googleLogin, loading } = useAuth();
   const router = useRouter();
@@ -33,7 +32,7 @@ function LoginFormComponent() {
   const [googleLoading, setGoogleLoading] = useState(false);
 
   // Get redirect URL from query params or default to dashboard
-  const redirectUrl = searchParams?.get('redirect') || '/dashboard';
+  const redirectUrl ='/dashboard';
 
   // Initialize form
   const form = useForm<LoginFormValues>({
