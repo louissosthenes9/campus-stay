@@ -94,15 +94,19 @@ export default function Header() {
               ))}
             </nav>
             <div className="flex flex-col space-y-3 mt-4 pt-4 border-t border-border">
-              <Link
-                className='btn-outline text-primary border-2 border-primary'
-                href={"/login"}>
-                login
-              </Link>
+              <div className='border-2 border-indigo-600 flex justify-center text-center rounded-4xl'>
+                <Link
+                  className="text-indigo-600 border-2 py-2 px-4 rounded-md font-medium text-center transition-all duration-200 hover:bg-indigo-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-opacity-50"
+                  href={"/login"}>
+                  Login
+                </Link>
+              </div>
 
               <Link
                 href="/signup"
-                className="w-full btn-primary">Sign up</Link>
+                className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md font-medium text-center transition-all duration-200 hover:bg-indigo-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-opacity-50">
+                Sign up
+              </Link>
             </div>
           </motion.div>
         )}

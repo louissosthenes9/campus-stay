@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,10 +58,11 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     setGoogleLoading(true);
     try {
-      const response = await googleLogin("GOOGLE_TOKEN_WOULD_GO_HERE");
+      // Pass the ID token to your backend
+      const response = await googleLogin(credentialResponse.credential || "");
       
       if (response.success) {
         if (response.data?.status === 'success') {
@@ -69,6 +71,7 @@ export default function LoginPage() {
           });
           router.push(redirectUrl);
         } else if (response.data?.status === 'onboarding_required' || response.data?.status === 'profile_required') {
+          // Redirect to onboarding with temp token
           router.push(`/onboarding?token=${response.data?.temp_token}`);
         }
       } else {
@@ -83,6 +86,12 @@ export default function LoginPage() {
     } finally {
       setGoogleLoading(false);
     }
+  };
+
+  const handleGoogleError = () => {
+    toast.error("Google Sign-in failed", {
+      description: "We couldn't sign you in with Google. Please try again.",
+    });
   };
 
   // Show loading state until auth is initialized
@@ -119,26 +128,18 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Button 
-              type="button" 
-              variant="outline" 
-              className="w-full flex items-center justify-center gap-2"
-              onClick={handleGoogleSignIn}
-              disabled={googleLoading || loading}
-            >
-              {googleLoading ? (
-                <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <Image
-                  src="/google.svg"
-                  alt="Google Logo"
-                  width={20}
-                  height={20}
-                  className="h-4 w-4"
-                />
-              )}
-              Sign in with Google
-            </Button>
+            <div className="w-full flex justify-center">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                useOneTap
+                theme="outline"
+                size="large"
+                text="signin_with"
+                shape="rectangular"
+                logo_alignment="center"
+              />
+            </div>
             
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -206,7 +207,7 @@ export default function LoginPage() {
             <p className="text-sm text-muted-foreground">
               Don't have an account?{" "}
               <Link 
-                href="/register" 
+                href="/signup" 
                 className="font-medium text-indigo-600 hover:text-indigo-500"
               >
                 Sign up

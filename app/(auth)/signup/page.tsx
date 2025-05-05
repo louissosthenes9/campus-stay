@@ -3,6 +3,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google'
 import * as z from "zod"
 import { 
   Check, ChevronRight, ChevronsRight, User, Building, 
@@ -17,6 +18,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 import useAuth from "@/hooks/use-auth"
 
 // Universities data
@@ -74,10 +76,10 @@ type FormData = z.infer<typeof formSchema>;
 export default function Page() {
   const [step, setStep] = useState(1);
   const [totalSteps, setTotalSteps] = useState(3);
-  const { register: registerUser, loading, error } = useAuth();
+  const { register: registerUser, loading, error, googleLogin } = useAuth();
   const router = useRouter();
-  // Add state for loading animation
   const [showLoadingAnimation, setShowLoadingAnimation] = useState(false);
+  const [googleOnboardingData, setGoogleOnboardingData] = useState<any>(null);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -154,13 +156,73 @@ export default function Page() {
     }
   };
   
+  // Handle Google signup success
+  const handleGoogleSignupSuccess = async (credentialResponse: CredentialResponse) => {
+    setShowLoadingAnimation(true);
+    try {
+      const response = await googleLogin(credentialResponse.credential || "");
+      
+      if (response.success) {
+        if (response.data?.status === 'success') {
+          // User already exists and is logged in
+          toast.success("Google login successful", {
+            description: "Welcome to CampusStay!",
+          });
+          router.push("/dashboard");
+        } else if (response.data?.status === 'onboarding_required') {
+          // Need to complete onboarding - store the data and continue with form
+          setGoogleOnboardingData({
+            temp_token: response.data?.temp_token,
+            email: response.data?.email,
+            first_name: response.data?.first_name,
+            last_name: response.data?.last_name,
+            google_id: response.data?.google_id
+          });
+          
+          // Auto-fill form data if available
+          if (response.data?.email) {
+            form.setValue("email", response.data.email);
+          }
+          if (response.data?.first_name) {
+            form.setValue("first_name", response.data.first_name);
+          }
+          if (response.data?.last_name) {
+            form.setValue("last_name", response.data.last_name);
+          }
+          
+          // Move to step 1 (Role selection) if we're using Google signup
+          setStep(1);
+          toast.info("Complete your registration", {
+            description: "Please select your role and complete the remaining information.",
+          });
+        }
+      } else {
+        toast.error("Google signup failed", {
+          description: response.error || "An error occurred during signup",
+        });
+      }
+    } catch (error) {
+      toast.error("Signup error", {  
+        description: "An unexpected error occurred. Please try again.",
+      });
+    } finally {
+      setShowLoadingAnimation(false);
+    }
+  };
+
+  const handleGoogleSignupError = () => {
+    toast.error("Google Sign-up failed", {
+      description: "We couldn't sign you up with Google. Please try again or use regular signup.",
+    });
+  };
+
+  // Modified onSubmit to handle Google onboarding data
   const onSubmit = async (data: FormData) => {
     // Only submit the form if we're on the last step
     if (step < totalSteps) {
       return;
     }
     
-    // Show loading animation
     setShowLoadingAnimation(true);
     
     // Map the property_owner type to broker for API compatibility
@@ -290,6 +352,24 @@ export default function Page() {
           </div>
           
           <CardContent className="mt-6 px-8">
+            {/* Add Google signup button before the form steps */}
+            <div className="mb-8 flex flex-col items-center">
+              <h3 className="text-lg font-medium mb-4 text-gray-700">Sign up faster with Google</h3>
+              <GoogleLogin
+                onSuccess={handleGoogleSignupSuccess}
+                onError={handleGoogleSignupError}
+                useOneTap
+                theme="outline"
+                size="large"
+                text="signup_with"
+                shape="rectangular"
+                logo_alignment="center"
+              />
+              <div className="w-full mt-6 flex items-center gap-4 before:content-[''] before:flex-1 before:border-t before:border-gray-200 after:content-[''] after:flex-1 after:border-t after:border-gray-200">
+                <span className="text-sm text-gray-500">or continue with email</span>
+              </div>
+            </div>
+            
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 {/* Step 1: Select Role */}

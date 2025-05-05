@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import "./globals.css";  
-import { Toaster } from "@/components/ui/sonner"
+import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
+import { GoogleOAuthProvider } from '@react-oauth/google'; // Import GoogleOAuthProvider
 
-
-const inter = Inter({ 
+const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-inter',
@@ -23,6 +23,9 @@ export const metadata: Metadata = {
   },
 };
 
+// Ensure you have NEXT_PUBLIC_GOOGLE_CLIENT_ID set in your .env.local file
+const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -31,8 +34,10 @@ export default function RootLayout({
   return (
     <html lang={"en"} className={inter.variable}>
       <body className="min-h-screen flex flex-col">
-        <Toaster />
-         {children}
+        <GoogleOAuthProvider clientId={googleClientId}>
+          <Toaster />
+          {children}
+        </GoogleOAuthProvider>
       </body>
     </html>
   );

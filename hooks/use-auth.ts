@@ -237,7 +237,7 @@ export default function useAuth() {
     try {
       const response = await performPostRequest<GoogleLoginResponse>(
         '/users/google_login/',
-        { token }
+        { id_token: token } // Change this to match your backend expectation - some use 'id_token' instead of 'token'
       );
 
       if (response.success) {
