@@ -41,7 +41,7 @@ const formSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   confirm_password: z.string(),
-  user_type: z.enum(["student", "broker","admin"]),
+  roles: z.enum(["student", "broker","admin"]),
   // Student specific fields
   university: z.string().optional(),
   course: z.string().optional(), // Add course field
@@ -63,7 +63,7 @@ type FormData = z.infer<typeof formSchema>;
     first_name: string;
     last_name: string;
     mobile: string;
-    user_type: "student" | "broker" | "admin";
+    roles: "student" | "broker" | "admin";
     student_profile?: {
       university: number | undefined;
       course: string | undefined;
@@ -91,14 +91,14 @@ export default function Page() {
       password: "",
       mobile:"",
       confirm_password: "",
-      user_type: "student",
+      roles: "student",
       university: "",
       course: "", 
     },
     mode: "onChange"
   });
 
-  const userType = form.watch("user_type");
+  const userType = form.watch("roles");
   const selectedUniversity = form.watch("university");
   
   // Campus options based on university selection
@@ -144,7 +144,7 @@ export default function Page() {
   const getFieldsForStep = (stepNumber: number) => {
     switch (stepNumber) {
       case 1:
-        return ["user_type"];
+        return ["roles"];
       case 2:
         return ["first_name", "last_name", "mobile", "username", "email", "password", "confirm_password"];
       case 3:
@@ -226,7 +226,7 @@ export default function Page() {
     setShowLoadingAnimation(true);
     
     // Map the property_owner type to broker for API compatibility
-    const userTypeForApi = data.user_type === "broker" ? "broker" : data.user_type;
+    const userTypeForApi = data.roles === "broker" ? "broker" : data.roles;
     
     // Create a properly structured data object for the API
     const registerData: RegisterData = {
@@ -236,11 +236,11 @@ export default function Page() {
       first_name: data.first_name,
       last_name: data.last_name,
       mobile: data.mobile,
-      user_type: userTypeForApi as "student" | "broker" | "admin",
+      roles: userTypeForApi as "student" | "broker" | "admin",
     };
     
     // Add student_profile as a proper nested object with university as a number
-    if (data.user_type === "student") {
+    if (data.roles === "student") {
       registerData.student_profile = {
         university: parseInt(data.university || "0", 10) || 1, // Convert to number and ensure a valid value
         course: data.course || "Undeclared"
@@ -248,7 +248,7 @@ export default function Page() {
     }
     
     // Add broker_profile as a proper nested object
-    if (data.user_type === "broker") {
+    if (data.roles === "broker") {
       registerData.broker_profile = {
         company_name: data.company_name
       };
@@ -377,7 +377,7 @@ export default function Page() {
                   <div className="space-y-6">
                     <FormField
                       control={form.control}
-                      name="user_type"
+                      name="roles"
                       render={({ field }) => (
                         <FormItem className="space-y-5">
                           <FormLabel className="text-blue-700 text-lg">I am joining Campus Stay as...</FormLabel>

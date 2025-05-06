@@ -8,7 +8,7 @@ interface User {
   email: string;
   first_name: string;
   last_name: string;
-  user_type?: 'student' | 'broker' | 'admin';
+  roles?: 'student' | 'broker' | 'admin';
   student_profile?: any;
   broker_profile?: any;
 }
@@ -29,7 +29,7 @@ interface RegisterData {
   password: string;
   first_name?: string;
   last_name?: string;
-  user_type: 'student' | 'broker' | 'admin';
+  roles: 'student' | 'broker' | 'admin';
   student_profile?: any;
   broker_profile?: any;
 }
@@ -44,12 +44,12 @@ interface GoogleLoginResponse {
   last_name?: string;
   google_id?: string;
   temp_token?: string;
-  user_type?: 'student' | 'broker' | 'admin';
+  roles?: 'student' | 'broker' | 'admin';
 }
 
 interface OnboardingData {
   temp_token: string;
-  user_type: 'student' | 'broker';
+  roles: 'student' | 'broker';
   first_name?: string;
   last_name?: string;
   student_profile?: any;
@@ -206,7 +206,7 @@ export default function useAuth() {
         '/users/',
         registerData,
         {},
-        "application/json" // Explicitly set content type to JSON
+        "application/json" 
       );
     
       if (response.success && response.data) {
@@ -237,7 +237,7 @@ export default function useAuth() {
     try {
       const response = await performPostRequest<GoogleLoginResponse>(
         '/users/google_login/',
-        { id_token: token } // Change this to match your backend expectation - some use 'id_token' instead of 'token'
+        { id_token: token } 
       );
 
       if (response.success) {
