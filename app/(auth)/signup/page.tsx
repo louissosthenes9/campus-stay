@@ -261,8 +261,10 @@ export default function Page() {
     // Hide loading animation after response (whether success or error)
     setShowLoadingAnimation(false);
     
-    if (success) {
+    if (userType==="broker" && success) {
       router.push("/dashboard");
+    }else if (userType==="student" && success) {
+      router.push("/");
     }
   };
 

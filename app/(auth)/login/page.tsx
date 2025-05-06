@@ -20,18 +20,27 @@ import useAuth from '@/hooks/use-auth';
 // Form validation schema
 const loginSchema = z.object({
   username: z.string().min(1, { message: "Username is required" }),
-  password: z.string().min(1, { message: "Password is required" }),
+  password: z.string().min(8, { message: "Password is required" }),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const { login, googleLogin, loading, initialized } = useAuth();
+  const { login, googleLogin, loading, initialized ,user} = useAuth();
   const router = useRouter();
   const [googleLoading, setGoogleLoading] = useState(false);
 
   // Get redirect URL or default to dashboard
-  const redirectUrl = '/dashboard';
+  const redirectUrl = (() => {
+    switch (user?.roles) {
+      case 'admin':
+        return '/staff/dashboard';
+      case 'broker':
+        return '/broker/dashboard';
+      default:
+        return '/';
+    }
+  })();
 
   // Initialize form
   const form = useForm<LoginFormValues>({
