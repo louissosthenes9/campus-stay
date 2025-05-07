@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   },
 };
 
-// Ensure you have NEXT_PUBLIC_GOOGLE_CLIENT_ID set in your .env.local file
+
 const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 
 export default function RootLayout({
