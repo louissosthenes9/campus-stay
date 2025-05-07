@@ -50,20 +50,24 @@ export default function UniversitySection() {
         whileInView="whileInView"
       >
         {[
+          
           {
             title: 'Shared Accommodation in City Center',
             location: '5 minute walk to University of Dar es Salaam',
             price: '65,000',
+            image: '/house2.jpg',
           },
           {
             title: 'UDSM Student Living',
             location: '2 minute walk to University of Dar es Salaam',
             price: '75,000',
+            image: '/house3.jpg',
           },
           {
             title: 'IFM Student Living Top Floor',
             location: 'On campus at IFM',
             price: '85,000',
+            image: '/house6.jpg',
           },
         ].map((listing, index) => (
           <motion.div
@@ -71,8 +75,10 @@ export default function UniversitySection() {
             variants={scaleIn}
             className="bg-card rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300"
           >
+
+            
             <Image
-              src="/student-room4.jpg"
+              src={listing.image}
               width={400}
               height={250}
               alt={listing.title}
