@@ -34,7 +34,7 @@ export default function StaffLayout({
     <html lang={"en"} className={inter.variable}>
       <body className="min-h-screen flex flex-col">
         <GoogleOAuthProvider clientId={googleClientId}>
-          <Toaster  position="top-center"/>
+          <Toaster  position="top-center" richColors/>
           {children}
         </GoogleOAuthProvider>
       </body>
