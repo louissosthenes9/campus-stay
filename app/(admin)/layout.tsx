@@ -1,14 +1,7 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "../globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { GoogleOAuthProvider } from '@react-oauth/google'; // Import GoogleOAuthProvider
-
-const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-inter',
-});
 
 export const metadata: Metadata = {
   title: "Campus Stay | Student Accommodation Platform",
@@ -32,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang={"en"} className={inter.variable}>
+    <html lang={"en"}>
       <body className="min-h-screen flex flex-col">
         <GoogleOAuthProvider clientId={googleClientId}>
           <Toaster />

@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
+import { set, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google'
 import * as z from "zod"
@@ -76,6 +76,7 @@ type FormData = z.infer<typeof formSchema>;
 export default function Page() {
   const [step, setStep] = useState(1);
   const [totalSteps, setTotalSteps] = useState(3);
+  const [isGoogleBtnVisible, setIsGoogleBtnVisible] = useState(true);
   const { register: registerUser, loading, error, googleLogin } = useAuth();
   const router = useRouter();
   const [showLoadingAnimation, setShowLoadingAnimation] = useState(false);
@@ -190,6 +191,7 @@ export default function Page() {
             form.setValue("last_name", response.data.last_name);
           }
           
+          setIsGoogleBtnVisible(false);
           // Move to step 1 (Role selection) if we're using Google signup
           setStep(1);
           toast.info("Complete your registration", {
@@ -355,7 +357,9 @@ export default function Page() {
           
           <CardContent className="mt-6 px-8">
             {/* Add Google signup button before the form steps */}
-            <div className="mb-8 flex flex-col items-center">
+            {
+              isGoogleBtnVisible && (
+                <div className="mb-8 flex flex-col items-center">
               <h3 className="text-lg font-medium mb-4 text-gray-700">Sign up faster with Google</h3>
               <GoogleLogin
                 onSuccess={handleGoogleSignupSuccess}
@@ -371,6 +375,8 @@ export default function Page() {
                 <span className="text-sm text-gray-500">or continue with email</span>
               </div>
             </div>
+              )
+            }
             
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
