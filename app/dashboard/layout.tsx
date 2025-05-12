@@ -2,7 +2,7 @@
 import "../globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { DashboardSidebar } from "@/app/dashboard/sidebar";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import ClientProviders from "@/components/client-providers";
 
 export default function DashboardLayout({
@@ -17,6 +17,7 @@ export default function DashboardLayout({
           <ClientProviders>
             <DashboardSidebar />
             <main className="px-12">
+               <SidebarTrigger />
               {children}
             </main>
             <Toaster position="top-center" richColors />
