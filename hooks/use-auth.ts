@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import {jwtDecode} from 'jwt-decode';
 import useApi from './use-api';
 
 // Types
@@ -56,14 +57,27 @@ interface OnboardingData {
   broker_profile?: any;
 }
 
+interface DecodedToken {
+  user_id: string;
+  username: string;
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  roles?: 'student' | 'broker' | 'admin';
+  exp: number;
+  student_profile?: any;
+  broker_profile?: any;
+  [key: string]: any;
+}
+
 export default function useAuth() {
-  const { performGetRequest, performPostRequest } = useApi();
+  const { performPostRequest } = useApi();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [initialized, setInitialized] = useState(false); // Track initial auth check
+  const [initialized, setInitialized] = useState(false);
 
-  // Token management functions
+  // Token management
   const getTokens = useCallback((): AuthTokens | null => {
     const access = localStorage.getItem('access_token');
     const refresh = localStorage.getItem('refresh_token');
@@ -84,13 +98,35 @@ export default function useAuth() {
     return !!getTokens();
   }, [getTokens]);
 
-  // Auth header creator
   const authHeaders = useCallback(() => {
     const tokens = getTokens();
-    return tokens ? { 'Authorization': `Bearer ${tokens.access}` } : {};
+    return tokens ? { Authorization: `Bearer ${tokens.access}` } : {};
   }, [getTokens]);
 
-  // Token refresh
+  // Decode user from token
+  const getUserFromToken = useCallback((): User | null => {
+    try {
+      const tokens = getTokens();
+      if (!tokens?.access) return null;
+
+      const decoded = jwtDecode<DecodedToken>(tokens.access);
+      console.log('Decoded token:', decoded);
+
+      return {
+        id: decoded.user_id,
+        username: decoded.username,
+        email: decoded.email || '',
+        first_name: decoded.first_name || '',
+        last_name: decoded.last_name || '',
+        roles: decoded.roles,
+        student_profile: decoded.student_profile,
+        broker_profile: decoded.broker_profile,
+      };
+    } catch (err) {
+      return null;
+    }
+  }, [getTokens]);
+
   const refreshToken = useCallback(async (): Promise<boolean> => {
     const tokens = getTokens();
     if (!tokens?.refresh) return false;
@@ -102,86 +138,29 @@ export default function useAuth() {
 
       if (response.success && response.data.access) {
         localStorage.setItem('access_token', response.data.access);
+        const newUser = getUserFromToken();
+        setUser(newUser);
         return true;
       }
-    } catch (err) {
-      // Silent fail on refresh error
-    }
-    
+    } catch (err) {}
+
     return false;
-  }, [getTokens, performPostRequest]);
+  }, [getTokens, performPostRequest, getUserFromToken]);
 
-  // User fetching
-  const fetchCurrentUser = useCallback(async (silent = false) => {
-    // Check authentication status first
-    if (!isAuthenticated()) {
-      setUser(null);
-      if (!silent) setLoading(false);
-      return null;
-    }
-
-    // Set loading state only if we proceed with the fetch and it's not silent
-    if (!silent) setLoading(true);
-    setError(null);
-
-    try {
-      const response = await performGetRequest<User>('/users/me/', {}, authHeaders());
-
-      if (response.success) {
-        setUser(response.data);
-        if (!silent) setLoading(false);
-        return response.data;
-      } else {
-        // If token might be expired, try refreshing
-        if (response.status === 401) {
-          const refreshed = await refreshToken();
-          if (refreshed) {
-            // Try fetching user again with new token
-            const retryResponse = await performGetRequest<User>('/users/me/', {}, authHeaders());
-            if (retryResponse.success) {
-              setUser(retryResponse.data);
-              if (!silent) setLoading(false);
-              return retryResponse.data;
-            } else {
-              setUser(null);
-              setError('Session expired. Please login again.');
-              clearTokens();
-            }
-          } else {
-            setUser(null);
-            clearTokens();
-          }
-        } else {
-          setError(response.error || 'Failed to fetch user data');
-          setUser(null);
-        }
-      }
-    } catch (err) {
-      setError('Network error while fetching user data');
-      setUser(null);
-    }
-
-    if (!silent) setLoading(false);
-    return null;
-  }, [performGetRequest, authHeaders, isAuthenticated, clearTokens, refreshToken]);
-
-  // Login function
   const login = async (credentials: LoginCredentials) => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await performPostRequest<{ refresh: string; access: string; user: User }>(
+      const response = await performPostRequest<{ refresh: string; access: string }>(
         '/users/login/',
         credentials
       );
 
       if (response.success && response.data) {
-        setTokens({
-          access: response.data.access,
-          refresh: response.data.refresh
-        });
-        setUser(response.data.user);
+        setTokens(response.data);
+        const userFromToken = getUserFromToken();
+        setUser(userFromToken);
         setLoading(false);
         return true;
       } else {
@@ -196,25 +175,22 @@ export default function useAuth() {
     }
   };
 
-  // Register function
   const register = async (registerData: RegisterData) => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      const response = await performPostRequest<{ refresh: string; access: string; user: User }>(
+      const response = await performPostRequest<{ refresh: string; access: string }>(
         '/users/',
         registerData,
         {},
-        "application/json" 
+        'application/json'
       );
-    
+
       if (response.success && response.data) {
-        setTokens({
-          access: response.data.access,
-          refresh: response.data.refresh
-        });
-        setUser(response.data.user);
+        setTokens(response.data);
+        const userFromToken = getUserFromToken();
+        setUser(userFromToken);
         setLoading(false);
         return true;
       } else {
@@ -229,7 +205,6 @@ export default function useAuth() {
     }
   };
 
-  // Google login function
   const googleLogin = async (token: string) => {
     setLoading(true);
     setError(null);
@@ -237,23 +212,17 @@ export default function useAuth() {
     try {
       const response = await performPostRequest<GoogleLoginResponse>(
         '/users/google_login/',
-        { id_token: token } 
+        { id_token: token }
       );
 
       if (response.success) {
         if (response.data.status === 'success') {
-          // User is authenticated
-          if (response.data.access && response.data.refresh && response.data.user) {
-            setTokens({
-              access: response.data.access,
-              refresh: response.data.refresh
-            });
-            setUser(response.data.user);
+          if (response.data.access && response.data.refresh) {
+            setTokens({ access: response.data.access, refresh: response.data.refresh });
+            const userFromToken = getUserFromToken();
+            setUser(userFromToken);
           }
-          setLoading(false);
-          return { success: true, data: response.data };
-        } 
-        // User needs to complete onboarding or profile
+        }
         setLoading(false);
         return { success: true, data: response.data };
       } else {
@@ -268,23 +237,20 @@ export default function useAuth() {
     }
   };
 
-  // Complete Google onboarding
   const completeGoogleOnboarding = async (onboardingData: OnboardingData) => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await performPostRequest<{ refresh: string; access: string; user: User }>(
+      const response = await performPostRequest<{ refresh: string; access: string }>(
         '/users/complete_google_onboarding/',
         onboardingData
       );
 
       if (response.success && response.data) {
-        setTokens({
-          access: response.data.access,
-          refresh: response.data.refresh
-        });
-        setUser(response.data.user);
+        setTokens(response.data);
+        const userFromToken = getUserFromToken();
+        setUser(userFromToken);
         setLoading(false);
         return true;
       } else {
@@ -299,25 +265,22 @@ export default function useAuth() {
     }
   };
 
-  // Logout function
   const logout = useCallback(() => {
     clearTokens();
     setUser(null);
   }, [clearTokens]);
 
-  // Check authentication status on mount only
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkAuth = () => {
       if (isAuthenticated()) {
-        await fetchCurrentUser();
-      } else {
-        setLoading(false);
+        const userFromToken = getUserFromToken();
+        setUser(userFromToken);
       }
+      setLoading(false);
       setInitialized(true);
     };
-    
+
     checkAuth();
-    // This effect should run only once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -332,8 +295,7 @@ export default function useAuth() {
     googleLogin,
     completeGoogleOnboarding,
     logout,
-    fetchCurrentUser,
-    authHeaders,
     refreshToken,
+    authHeaders,
   };
 }

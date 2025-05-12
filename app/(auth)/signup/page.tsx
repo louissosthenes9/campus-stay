@@ -44,10 +44,9 @@ const formSchema = z.object({
   roles: z.enum(["student", "broker","admin"]),
   // Student specific fields
   university: z.string().optional(),
-  course: z.string().optional(), // Add course field
+  course: z.string().optional(),
   //broker specific fields
-  company_name:z.string().optional(),
-
+  company_name: z.string().optional(),
 }).refine(data => data.password === data.confirm_password, {
   message: "Passwords do not match",
   path: ["confirm_password"],
@@ -55,23 +54,22 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-   // Define type for registration data
-   interface RegisterData {
-    username: string;
-    email: string;
-    password: string;
-    first_name: string;
-    last_name: string;
-    mobile: string;
-    roles: "student" | "broker" | "admin";
-    student_profile?: {
-      university: number | undefined;
-      course: string | undefined;
-    };
-    broker_profile?: {
-      company_name: string | undefined;
-    };
-  }
+interface RegisterData {
+  username: string;
+  email: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+  mobile: string;
+  roles: "student" | "broker" | "admin";
+  student_profile?: {
+    university: number | undefined;
+    course: string | undefined;
+  };
+  broker_profile?: {
+    company_name: string | undefined;
+  };
+}
 
 export default function Page() {
   const [step, setStep] = useState(1);
@@ -90,7 +88,7 @@ export default function Page() {
       username: "",
       email: "",
       password: "",
-      mobile:"",
+      mobile: "",
       confirm_password: "",
       roles: "student",
       university: "",
@@ -102,7 +100,6 @@ export default function Page() {
   const userType = form.watch("roles");
   const selectedUniversity = form.watch("university");
   
-  // Campus options based on university selection
   const [campusOptions, setCampusOptions] = useState<{id: string, name: string}[]>([]);
   
   useEffect(() => {
@@ -114,10 +111,8 @@ export default function Page() {
             { id: "harvard-medical", name: "Longwood Medical Area" }
           ]
         };
-        
         return campusMap[selectedUniversity] || [];
       };
-      
       setCampusOptions(getCampusOptions());
     } else {
       setCampusOptions([]);
@@ -126,38 +121,28 @@ export default function Page() {
 
   const nextStep = () => {
     const currentFields = getFieldsForStep(step);
-    
-    // Validate current step fields before proceeding
     form.trigger(currentFields as any).then(isValid => {
       if (isValid) {
         setStep(prev => Math.min(prev + 1, totalSteps));
-        window.scrollTo(0, 0); // Scroll to top when advancing steps
+        window.scrollTo(0, 0);
       }
     });
   };
   
   const prevStep = () => {
     setStep(prev => Math.max(prev - 1, 1));
-    window.scrollTo(0, 0); // Scroll to top when going back
+    window.scrollTo(0, 0);
   };
   
-  // Get fields that should be validated for the current step
   const getFieldsForStep = (stepNumber: number) => {
     switch (stepNumber) {
-      case 1:
-        return ["roles"];
-      case 2:
-        return ["first_name", "last_name", "mobile", "username", "email", "password", "confirm_password"];
-      case 3:
-        return userType === "student" 
-          ? ["university", "course"] 
-          : ["company_name"];
-      default:
-        return [];
+      case 1: return ["roles"];
+      case 2: return ["first_name", "last_name", "mobile", "username", "email", "password", "confirm_password"];
+      case 3: return userType === "student" ? ["university", "course"] : ["company_name"];
+      default: return [];
     }
   };
   
-  // Handle Google signup success
   const handleGoogleSignupSuccess = async (credentialResponse: CredentialResponse) => {
     setShowLoadingAnimation(true);
     try {
@@ -165,13 +150,11 @@ export default function Page() {
       
       if (response.success) {
         if (response.data?.status === 'success') {
-          // User already exists and is logged in
           toast.success("Google login successful", {
             description: "Welcome to CampusStay!",
           });
           router.push("/dashboard");
         } else if (response.data?.status === 'onboarding_required') {
-          // Need to complete onboarding - store the data and continue with form
           setGoogleOnboardingData({
             temp_token: response.data?.temp_token,
             email: response.data?.email,
@@ -180,19 +163,11 @@ export default function Page() {
             google_id: response.data?.google_id
           });
           
-          // Auto-fill form data if available
-          if (response.data?.email) {
-            form.setValue("email", response.data.email);
-          }
-          if (response.data?.first_name) {
-            form.setValue("first_name", response.data.first_name);
-          }
-          if (response.data?.last_name) {
-            form.setValue("last_name", response.data.last_name);
-          }
+          if (response.data?.email) form.setValue("email", response.data.email);
+          if (response.data?.first_name) form.setValue("first_name", response.data.first_name);
+          if (response.data?.last_name) form.setValue("last_name", response.data.last_name);
           
           setIsGoogleBtnVisible(false);
-          // Move to step 1 (Role selection) if we're using Google signup
           setStep(1);
           toast.info("Complete your registration", {
             description: "Please select your role and complete the remaining information.",
@@ -218,19 +193,12 @@ export default function Page() {
     });
   };
 
-  // Modified onSubmit to handle Google onboarding data
   const onSubmit = async (data: FormData) => {
-    // Only submit the form if we're on the last step
-    if (step < totalSteps) {
-      return;
-    }
+    if (step < totalSteps) return;
     
     setShowLoadingAnimation(true);
-    
-    // Map the property_owner type to broker for API compatibility
     const userTypeForApi = data.roles === "broker" ? "broker" : data.roles;
     
-    // Create a properly structured data object for the API
     const registerData: RegisterData = {
       username: data.username,
       email: data.email,
@@ -241,31 +209,25 @@ export default function Page() {
       roles: userTypeForApi as "student" | "broker" | "admin",
     };
     
-    // Add student_profile as a proper nested object with university as a number
     if (data.roles === "student") {
       registerData.student_profile = {
-        university: parseInt(data.university || "0", 10) || 1, // Convert to number and ensure a valid value
+        university: parseInt(data.university || "0", 10) || 1,
         course: data.course || "Undeclared"
       };
     }
     
-    // Add broker_profile as a proper nested object
     if (data.roles === "broker") {
       registerData.broker_profile = {
         company_name: data.company_name
       };
     }
 
-    console.log("Registering user with data:", JSON.stringify(registerData));
-    
     const success = await registerUser(registerData);
-    
-    // Hide loading animation after response (whether success or error)
     setShowLoadingAnimation(false);
     
     if (userType==="broker" && success) {
       router.push("/dashboard");
-    }else if (userType==="student" && success) {
+    } else if (userType==="student" && success) {
       router.push("/");
     }
   };
@@ -290,7 +252,6 @@ export default function Page() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50 py-10 px-4">
-      {/* Full-screen loading overlay */}
       {showLoadingAnimation && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="text-center">
@@ -329,7 +290,6 @@ export default function Page() {
             </div>
           </CardHeader>
           
-          {/* Progress bar */}
           <div className="px-6">
             <div className="relative h-2 bg-blue-100 rounded-full overflow-hidden">
               <div 
@@ -356,27 +316,25 @@ export default function Page() {
           </div>
           
           <CardContent className="mt-6 px-8">
-            {/* Add Google signup button before the form steps */}
-            {
-              isGoogleBtnVisible && (
-                <div className="mb-8 flex flex-col items-center">
-              <h3 className="text-lg font-medium mb-4 text-gray-700">Sign up faster with Google</h3>
-              <GoogleLogin
-                onSuccess={handleGoogleSignupSuccess}
-                onError={handleGoogleSignupError}
-                useOneTap
-                theme="outline"
-                size="large"
-                text="signup_with"
-                shape="rectangular"
-                logo_alignment="center"
-              />
-              <div className="w-full mt-6 flex items-center gap-4 before:content-[''] before:flex-1 before:border-t before:border-gray-200 after:content-[''] after:flex-1 after:border-t after:border-gray-200">
-                <span className="text-sm text-gray-500">or continue with email</span>
+            {/* Show Google signup button only on step 1 and if visible */}
+            {step === 1 && isGoogleBtnVisible && (
+              <div className="mb-8 flex flex-col items-center">
+                <h3 className="text-lg font-medium mb-4 text-gray-700">Sign up faster with Google</h3>
+                <GoogleLogin
+                  onSuccess={handleGoogleSignupSuccess}
+                  onError={handleGoogleSignupError}
+                  useOneTap
+                  theme="outline"
+                  size="large"
+                  text="signup_with"
+                  shape="rectangular"
+                  logo_alignment="center"
+                />
+                <div className="w-full mt-6 flex items-center gap-4 before:content-[''] before:flex-1 before:border-t before:border-gray-200 after:content-[''] after:flex-1 after:border-t after:border-gray-200">
+                  <span className="text-sm text-gray-500">or continue with email</span>
+                </div>
               </div>
-            </div>
-              )
-            }
+            )}
             
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -549,24 +507,24 @@ export default function Page() {
                       )}
                     />
                     <FormField 
-                    control={form.control}
-                    name="mobile"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-blue-700">Mobile Number</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Input 
-                              placeholder="+255 123 456 789" 
-                              className="pl-10 border-blue-200 focus:border-blue-400" 
-                              {...field} 
-                            />
-                            <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400 h-5 w-5" />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                      control={form.control}
+                      name="mobile"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-blue-700">Mobile Number</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input 
+                                placeholder="+255 123 456 789" 
+                                className="pl-10 border-blue-200 focus:border-blue-400" 
+                                {...field} 
+                              />
+                              <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400 h-5 w-5" />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField
@@ -644,7 +602,6 @@ export default function Page() {
                       )}
                     />
                     
-                    {/* Add Course/Program field */}
                     <FormField
                       control={form.control}
                       name="course"
@@ -696,11 +653,9 @@ export default function Page() {
                         </FormItem>
                       )}
                     />
-                    
                   </div>
                 )}
 
-                {/* Error message */}
                 {error && (
                   <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm flex items-center space-x-2">
                     <div className="flex-shrink-0 w-5 h-5 text-red-500">⚠️</div>

@@ -10,7 +10,7 @@ import { fadeIn, scaleIn, staggerContainer } from '@/utils/motion';
 export default function HeroSection() {
   return (
      <section id="home" className="py-16 md:py-24 bg-gradient-to-b from-card to-muted">
-              <div className="container mx-auto px-4">
+              <div className="container mx-auto px-16">
                 <div className="flex flex-col md:flex-row items-center gap-8">
                   <motion.div className="w-full md:w-1/2" variants={fadeIn} initial="initial" whileInView="whileInView">
                     <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
