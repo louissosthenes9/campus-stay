@@ -49,7 +49,13 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+export async function fetchUsers() {
+  return await apiRequest({ method: 'GET', url: '/users' });
+}
 
+export async function suspendUser(userId: string) {
+  return await apiRequest({ method: 'PATCH', url: `/users/${userId}/suspend` });
+}
 export async function apiRequest<T>(
   config: AxiosRequestConfig
 ): Promise<ApiResponse<T>> {
@@ -121,4 +127,20 @@ export function useApi() {
     performDeleteRequest: <T>(endpoint: string, data?: object, headers?: object) =>
       performRequest<T>('DELETE', endpoint, data, headers),
   };
+}
+
+export async function addAmenity(data: { name: string; description?: string }) {
+  return await apiRequest({
+    method: 'POST',
+    url: '/amenities',
+    data,
+  });
+}
+
+export async function addUniversity(data: { name: string; location: string }) {
+  return await apiRequest({
+    method: 'POST',
+    url: '/universities',
+    data,
+  });
 }
