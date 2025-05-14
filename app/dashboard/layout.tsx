@@ -12,12 +12,12 @@ export default function DashboardLayout({
 }>) {
   return (
     <html>
-      <body className="min-h-screen bg-gray-50">
-        <SidebarProvider defaultOpen={true} suppressHydrationWarning={true}>
+      <body className="min-h-screen bg-gray-50 flex">
+        <SidebarProvider defaultOpen={true} >
           <ClientProviders>
             <DashboardSidebar />
-            <main className="px-12">
-               <SidebarTrigger />
+            <main className="px-12 flex-1">
+               <SidebarTrigger/>
               {children}
             </main>
             <Toaster position="top-center" richColors />

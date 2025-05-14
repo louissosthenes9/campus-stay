@@ -28,13 +28,9 @@ export default function DashboardPage() {
     activeStudentPercentage,
     recentProperties,
     recentEnquiries,
-    fetchStats 
   } = useStatsStore();
+
   
-  useEffect(() => {
-    fetchStats();
-    toast.success("Welcome to your dashboard!");
-  }, [fetchStats]);
 
   return (
     <div className="space-y-6">
