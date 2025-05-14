@@ -1,5 +1,7 @@
+'use client'
 import { useState, useEffect, useCallback } from 'react';
-import {jwtDecode} from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
+import { useRouter } from 'next/navigation';
 import useApi from './use-api';
 
 // Types
@@ -72,13 +74,18 @@ interface DecodedToken {
 
 export default function useAuth() {
   const { performPostRequest } = useApi();
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
+  // Added this to avoid re-calculations causing re-renders
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Token management
   const getTokens = useCallback((): AuthTokens | null => {
+    if (typeof window === 'undefined') return null;
+    
     const access = localStorage.getItem('access_token');
     const refresh = localStorage.getItem('refresh_token');
     return access && refresh ? { access, refresh } : null;
@@ -87,16 +94,14 @@ export default function useAuth() {
   const setTokens = useCallback((tokens: AuthTokens) => {
     localStorage.setItem('access_token', tokens.access);
     localStorage.setItem('refresh_token', tokens.refresh);
+    setIsAuthenticated(true);
   }, []);
 
   const clearTokens = useCallback(() => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
+    setIsAuthenticated(false);
   }, []);
-
-  const isAuthenticated = useCallback(() => {
-    return !!getTokens();
-  }, [getTokens]);
 
   const authHeaders = useCallback(() => {
     const tokens = getTokens();
@@ -110,7 +115,6 @@ export default function useAuth() {
       if (!tokens?.access) return null;
 
       const decoded = jwtDecode<DecodedToken>(tokens.access);
-      console.log('Decoded token:', decoded);
 
       return {
         id: decoded.user_id,
@@ -139,13 +143,19 @@ export default function useAuth() {
       if (response.success && response.data.access) {
         localStorage.setItem('access_token', response.data.access);
         const newUser = getUserFromToken();
-        setUser(newUser);
-        return true;
+        if (newUser) {
+          setUser(newUser);
+          return true;
+        }
       }
-    } catch (err) {}
+    } catch (err) {
+      // If refresh fails, log out the user
+      clearTokens();
+      setUser(null);
+    }
 
     return false;
-  }, [getTokens, performPostRequest, getUserFromToken]);
+  }, [getTokens, performPostRequest, getUserFromToken, clearTokens]);
 
   const login = async (credentials: LoginCredentials) => {
     setLoading(true);
@@ -216,12 +226,10 @@ export default function useAuth() {
       );
 
       if (response.success) {
-        if (response.data.status === 'success') {
-          if (response.data.access && response.data.refresh) {
-            setTokens({ access: response.data.access, refresh: response.data.refresh });
-            const userFromToken = getUserFromToken();
-            setUser(userFromToken);
-          }
+        if (response.data.status === 'success' && response.data.access && response.data.refresh) {
+          setTokens({ access: response.data.access, refresh: response.data.refresh });
+          const userFromToken = getUserFromToken();
+          setUser(userFromToken);
         }
         setLoading(false);
         return { success: true, data: response.data };
@@ -268,21 +276,55 @@ export default function useAuth() {
   const logout = useCallback(() => {
     clearTokens();
     setUser(null);
-  }, [clearTokens]);
+    router.push('/login'); // Redirect to login page after logout
+  }, [clearTokens, router]);
 
+  // Initialize auth state on mount
   useEffect(() => {
-    const checkAuth = () => {
-      if (isAuthenticated()) {
+    const initializeAuth = async () => {
+      setLoading(true);
+      
+      const tokens = getTokens();
+      if (tokens) {
+        setIsAuthenticated(true);
         const userFromToken = getUserFromToken();
-        setUser(userFromToken);
+        
+        if (userFromToken) {
+          setUser(userFromToken);
+        } else {
+          // Token invalid or expired, try to refresh
+          const refreshed = await refreshToken();
+          if (!refreshed) {
+            clearTokens(); // This will set isAuthenticated to false
+          }
+        }
+      } else {
+        setIsAuthenticated(false);
       }
+      
       setLoading(false);
       setInitialized(true);
     };
 
-    checkAuth();
+    initializeAuth();
+    // We're intentionally not including dependencies here as this should only run once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Token refresh setup - separated from initialization
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    
+    // Set up periodic token refresh
+    const refreshInterval = setInterval(async () => {
+      // Only refresh if we're authenticated
+      if (isAuthenticated) {
+        await refreshToken();
+      }
+    }, 15 * 60 * 1000); // Check every 15 minutes
+    
+    return () => clearInterval(refreshInterval);
+  }, [isAuthenticated, refreshToken]);
 
   return {
     user,

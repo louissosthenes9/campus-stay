@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -26,21 +26,27 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const { login, googleLogin, loading, initialized ,user} = useAuth();
+  const { login, googleLogin, loading, initialized, user } = useAuth();
   const router = useRouter();
-  const [googleLoading, setGoogleLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Get redirect URL or default to dashboard
-  const redirectUrl = (() => {
-    switch (user?.roles) {
-      case 'admin':
-        return '/staff/dashboard';
-      case 'broker':
-        return '/dashboard';
-      default:
-        return '/';
+  // Redirect if already logged in
+  useEffect(() => {
+    if (initialized && user) {
+      const redirectUrl = (() => {
+        switch (user?.roles) {
+          case 'admin':
+            return '/staff/dashboard';
+          case 'broker':
+            return '/dashboard';
+          default:
+            return '/';
+        }
+      })();
+      
+      router.push(redirectUrl);
     }
-  })();
+  }, [initialized, user, router]);
 
   // Initialize form
   const form = useForm<LoginFormValues>({
@@ -53,22 +59,33 @@ export default function LoginPage() {
 
   // Handle form submission
   const onSubmit = async (data: LoginFormValues) => {
-    const success = await login(data);
+    setIsSubmitting(true);
     
-    if (success) {
-      toast.success("Login successful", {     
-        description: "Welcome back to CampusStay!",
+    try {
+      const success = await login(data);
+      
+      if (success) {
+        toast.success("Login successful", {     
+          description: "Welcome back to CampusStay!",
+        });
+        // No need to redirect here - the useEffect will handle it
+      } else {
+        toast.error("Login failed", {
+          description: "Please check your credentials and try again.",
+        });
+      }
+    } catch (error) {
+      toast.error("Login error", {
+        description: "An unexpected error occurred. Please try again.",
       });
-      router.push(redirectUrl);
-    } else {
-      toast.error("Login failed", {
-        description: "Please check your credentials and try again.",
-      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
-    setGoogleLoading(true);
+    setIsSubmitting(true);
+    
     try {
       // Pass the ID token to your backend
       const response = await googleLogin(credentialResponse.credential || "");
@@ -78,7 +95,7 @@ export default function LoginPage() {
           toast.success("Login successful", {
             description: "Welcome to CampusStay!",
           });
-          router.push(redirectUrl);
+          // No need to redirect here - the useEffect will handle it
         } else if (response.data?.status === 'onboarding_required' || response.data?.status === 'profile_required') {
           // Redirect to onboarding with temp token
           router.push(`/onboarding?token=${response.data?.temp_token}`);
@@ -93,7 +110,7 @@ export default function LoginPage() {
         description: "An unexpected error occurred. Please try again.",
       });
     } finally {
-      setGoogleLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -107,6 +124,7 @@ export default function LoginPage() {
   if (!initialized) {
     return <LoginSkeleton />;
   }
+
 
   return (
     <div className="min-h-screen bg-muted flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -138,16 +156,22 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="w-full flex justify-center">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={handleGoogleError}
-                useOneTap
-                theme="outline"
-                size="large"
-                text="signin_with"
-                shape="rectangular"
-                logo_alignment="center"
-              />
+              {(loading || isSubmitting) ? (
+                <div className="flex items-center justify-center">
+                  <div className="h-6 w-6 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : (
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  useOneTap
+                  theme="outline"
+                  size="large"
+                  text="signin_with"
+                  shape="rectangular"
+                  logo_alignment="center"
+                />
+              )}
             </div>
             
             <div className="relative">
@@ -184,7 +208,7 @@ export default function LoginPage() {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} />
+                        <Input type="password" placeholder="Enter your password here" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -203,10 +227,13 @@ export default function LoginPage() {
                 <Button 
                   type="submit" 
                   className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
-                  disabled={loading}
+                  disabled={loading || isSubmitting}
                 >
-                  {loading ? (
-                    <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                  {(loading || isSubmitting) ? (
+                    <div className="flex items-center justify-center">
+                      <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                      Signing in...
+                    </div>
                   ) : "Sign in"}
                 </Button>
               </form>

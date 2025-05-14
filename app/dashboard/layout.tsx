@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { DashboardSidebar } from "@/app/dashboard/sidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import ClientProviders from "@/components/client-providers";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 export default function DashboardLayout({
   children,
@@ -17,8 +18,10 @@ export default function DashboardLayout({
           <ClientProviders>
             <DashboardSidebar />
             <main className="px-12 flex-1">
-               <SidebarTrigger/>
-              {children}
+              <SidebarTrigger />
+              <AuthProvider>
+                {children}
+              </AuthProvider>
             </main>
             <Toaster position="top-center" richColors />
           </ClientProviders>

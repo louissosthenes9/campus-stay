@@ -243,11 +243,8 @@ export const useAuthStore = create<AuthState>()(
         },
         
         logout: () => {
-          // Clear tokens and user from state
           set({ tokens: null, user: null });
           
-          // Optionally, you could also call a logout endpoint here if needed
-          // api.performPostRequest('/users/logout/', {});
         },
         
         refreshToken: async () => {

@@ -1,20 +1,19 @@
-
+'use client'
 import React, { createContext, useContext } from 'react';
 import useAuth from '../hooks/use-auth';
 
-// Create the context
 const AuthContext = createContext<ReturnType<typeof useAuth> | null>(null);
+
 export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
   const auth = useAuth();
   
   return (
     <AuthContext.Provider value={auth}>
-      {children}
+      {auth.initialized ? children : <div>Loading...</div>}
     </AuthContext.Provider>
   );
 };
 
-// Custom hook for using the auth context
 export const useAuthContext = () => {
   const context = useContext(AuthContext);
   if (!context) {

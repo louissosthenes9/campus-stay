@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { jwtDecode } from 'jwt-decode';
 
-// Define paths that require authentication
+// Define protected paths
 const protectedPaths = [
   '/dashboard',
   '/profile',
@@ -25,31 +26,59 @@ const publicPaths = [
   '/about',
 ];
 
+// Type for decoded JWT token
+interface DecodedToken {
+  user_id: string;
+  username: string;
+  email?: string;
+  roles?: 'student' | 'broker' | 'admin';
+  exp: number;
+  [key: string]: any;
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+ 
+  // Skip middleware for non-protected paths
+  const isPublicPath = publicPaths.some(path => 
+    pathname === path || pathname.startsWith(`${path}/`)
+  );
   
-  // Check if the path is protected
+  // For API routes, we'll let the API handle authentication
+  if (pathname.startsWith('/api/') || pathname.startsWith('/_next/')) {
+    return NextResponse.next();
+  }
+  
   const isProtectedPath = protectedPaths.some(path => 
     pathname === path || pathname.startsWith(`${path}/`)
   );
   
   // Check if the path requires specific roles
-  const requiredRoles = Object.entries(roleProtectedPaths).find(([path]) => 
+  const requiredRoleEntry = Object.entries(roleProtectedPaths).find(([path]) => 
     pathname === path || pathname.startsWith(`${path}/`)
-  )?.[1];
+  );
+  const requiredRoles = requiredRoleEntry ? requiredRoleEntry[1] : null;
   
-  // Skip middleware for non-protected paths
-  if (!isProtectedPath && !requiredRoles && !publicPaths.some(path => pathname === path)) {
-    return NextResponse.next();
-  }
-
-  // For API routes, we'll let the API handle authentication
-  if (pathname.startsWith('/api/')) {
+  // If not protected or role-protected and not a public path, just proceed
+  if (!isProtectedPath && !requiredRoles && !isPublicPath) {
     return NextResponse.next();
   }
 
   // Get auth token from cookies
-  const accessToken = request.cookies.get('auth_access_token')?.value;
+  const accessToken = request.cookies.get('access_token')?.value;
+  
+  // If accessing a public path and already authenticated, redirect to dashboard (optional)
+  if (isPublicPath && accessToken && (pathname === '/login' || pathname === '/register')) {
+    try {
+      // Verify token validity
+      const decoded = verifyToken(accessToken);
+      if (decoded) {
+        return NextResponse.redirect(new URL('/dashboard', request.url));
+      }
+    } catch (error) {
+      // Invalid token, continue to public page
+    }
+  }
   
   // If no token and trying to access protected path, redirect to login
   if (!accessToken && (isProtectedPath || requiredRoles)) {
@@ -57,12 +86,50 @@ export function middleware(request: NextRequest) {
     url.searchParams.set('redirect', pathname);
     return NextResponse.redirect(url);
   }
-
-  // For role-based paths, we need to check the token on the client side
-  // since we can't decode JWT securely in middleware
-  // The client-side ProtectedRoute component will handle this check
+  
+  // If token exists and path requires specific roles, verify role access
+  if (accessToken && requiredRoles) {
+    try {
+      const decoded = verifyToken(accessToken);
+      
+      if (!decoded) {
+        // Token invalid/expired
+        const url = new URL('/login', request.url);
+        url.searchParams.set('redirect', pathname);
+        return NextResponse.redirect(url);
+      }
+      
+      // Check if user has required role
+      const userRole = decoded.roles;
+      if (!userRole || !requiredRoles.includes(userRole)) {
+        return NextResponse.redirect(new URL('/unauthorized', request.url));
+      }
+    } catch (error) {
+      // Token verification failed
+      const url = new URL('/login', request.url);
+      url.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(url);
+    }
+  }
 
   return NextResponse.next();
+}
+
+// Helper function to verify and decode JWT token
+function verifyToken(token: string): DecodedToken | null {
+  try {
+    const decoded = jwtDecode<DecodedToken>(token);
+    
+    // Check if token is expired
+    const currentTime = Math.floor(Date.now() / 1000);
+    if (decoded.exp < currentTime) {
+      return null;
+    }
+    
+    return decoded;
+  } catch (error) {
+    return null;
+  }
 }
 
 export const config = {

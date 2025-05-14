@@ -5,13 +5,17 @@ import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
+  const { isAuthenticated, user, logout } = useAuthContext();
+  
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
+
+
 
   const navLinks = [
     { name: 'Home', href: '#home' },
@@ -48,20 +52,32 @@ export default function Header() {
 
           {/* Auth Buttons (Desktop) */}
           <div className="hidden md:flex items-center space-x-3">
-           <div className='border-2 border-primary flex justify-center text-center rounded-full px-8 py-2 hover:bg-indigo-300  transition-all duration-200'>
-           <Link
-              href={"/login"}
-              className='btn-outline text-primary font-bold '
-            >
-              sign in
-            </Link>
-           </div>
-            <Link
-              href={"/signup"}
-              className="btn-primary text-white py-2 px-8 rounded-full font-bold"
-            >
-              sign up
-            </Link>
+            {isAuthenticated ? (
+              <Button
+                variant="outline"
+                className="text-primary font-bold"
+                onClick={logout}
+              >
+                Logout
+              </Button>
+            ) : (
+              <>
+                <div className="border-2 border-primary rounded-full hover:bg-indigo-300 transition-all duration-200">
+                  <Link
+                    href="/login"
+                    className="btn-outline text-primary font-bold px-8 py-2 block"
+                  >
+                    Sign in
+                  </Link>
+                </div>
+                <Link
+                  href="/signup"
+                  className="btn-primary bg-indigo-600 text-white py-2 px-8 rounded-full font-bold hover:bg-indigo-700 transition-all duration-200"
+                >
+                  Sign up
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -96,19 +112,37 @@ export default function Header() {
               ))}
             </nav>
             <div className="flex flex-col space-y-3 mt-4 pt-4 border-t border-border">
-              <div className='border-2 border-indigo-600 flex justify-center text-center rounded-4xl py-2 px-8'>
-                <Link
-                  className="text-indigo-600 border-2 py-2 px-4 rounded-md font-medium text-center transition-all duration-200 hover:bg-indigo-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-opacity-50"
-                  href={"/login"}>
-                  Login
-                </Link>
-              </div>
-
-              <Link
-                href="/signup"
-                className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md font-medium text-center transition-all duration-200 hover:bg-indigo-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-opacity-50">
-                Sign up
-              </Link>
+              {isAuthenticated ? (
+                <Button
+                  variant="outline"
+                  className="text-primary font-bold w-full"
+                  onClick={() => {
+                    logout();
+                    toggleMobileMenu();
+                  }}
+                >
+                  Logout
+                </Button>
+              ) : (
+                <>
+                  <div className="border-2 border-primary rounded-full hover:bg-indigo-300 transition-all duration-200">
+                    <Link
+                      href="/login"
+                      className="btn-outline text-primary font-bold py-2 block text-center"
+                      onClick={toggleMobileMenu}
+                    >
+                      Sign in
+                    </Link>
+                  </div>
+                  <Link
+                    href="/signup"
+                    className="btn-primary bg-indigo-600 text-white py-2 px-4 rounded-full font-medium text-center transition-all duration-200 hover:bg-indigo-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-opacity-50"
+                    onClick={toggleMobileMenu}
+                  >
+                    Sign up
+                  </Link>
+                </>
+              )}
             </div>
           </motion.div>
         )}
