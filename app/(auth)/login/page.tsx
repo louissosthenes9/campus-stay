@@ -36,7 +36,7 @@ export default function LoginPage() {
       case 'admin':
         return '/staff/dashboard';
       case 'broker':
-        return '/broker/dashboard';
+        return '/dashboard';
       default:
         return '/';
     }
