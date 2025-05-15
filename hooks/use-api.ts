@@ -22,7 +22,7 @@ export default function useApi() {
     endpoint: string,
     data?: object,
     headers: object = {},
-    contentType: string = "application/json" // Add default content type parameter
+    contentType: string = "application/json" 
   ): Promise<ApiResponse<T>> => {
     // Ensure BASE_URL is defined
     if (!BASE_URL) {
@@ -42,7 +42,7 @@ export default function useApi() {
       method,
       url,
       headers: {
-        "Content-Type": contentType, // Use the provided content type
+        "Content-Type": contentType, 
         ...headers,
       },
     };

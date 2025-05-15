@@ -20,8 +20,12 @@ import FeaturedListings from './sections/FeaturedListings';
 import UniversitySection from './sections/UniversitySection';
 import RoomSection from './sections/RoomSection';
 import CallSection from './sections/CallSection';
+import { useAuthContext } from '@/contexts/AuthContext';
+
 
 export default function HomePage() {
+  const {isAuthenticated, user} = useAuthContext()
+  console.log("User Authenticated", user)
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
@@ -33,8 +37,22 @@ export default function HomePage() {
         <UniversitySection/>
         <BookingProcess />
         <RoomSection />
-        <BrokerSection />
-        <Testmonials />
+
+        {
+          isAuthenticated && user?.roles === 'student' ? (
+            <div></div>
+          ):(
+            <BrokerSection />
+          )
+        }
+       
+         {
+          isAuthenticated ? (
+            <div></div>
+          ):(
+            <Testmonials />
+          )
+         }
         <CallSection />
     
       </main>
