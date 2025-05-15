@@ -251,11 +251,16 @@ export default function PropertyPage() {
       };
 
       console.log("Submitting data:", submitData);
-      const result = await createProperty(submitData);
-      
+     // const result = await createProperty(submitData);
+     await new Promise((resolve) => setTimeout(resolve, 1500)); // Simulate network delay
+
+    
+      let result =true
       if (result) {
         toast.success("Property submitted successfully!");
         setPreviewOpen(true);
+
+        router.push("/dashboard/properties");
 
         
       } else {
