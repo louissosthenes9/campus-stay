@@ -48,7 +48,7 @@ const reviews = [
   }
 ];
 
-export default function PropertyDetailsPage() {
+export default function page() {
   const [activeTab, setActiveTab] = useState('photos');
 
   // Image URLs (Replace with real property images)
