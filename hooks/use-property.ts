@@ -273,9 +273,10 @@ export default function useProperty() {
     setError(null);
     
     try {
-      // Transform form data to API format first
+    
       const apiData = transformToApiFormat(propertyData);
       
+      console.log(apiData)
       // Create FormData object
       const formData = new FormData();
       
@@ -289,7 +290,6 @@ export default function useProperty() {
         if (Array.isArray(value) || typeof value === 'object') {
           formData.append(key, JSON.stringify(value));
         }
-        // Handle booleans
         else if (typeof value === 'boolean') {
           formData.append(key, value ? 'true' : 'false');
         }
@@ -388,12 +388,11 @@ export default function useProperty() {
       // Get current property data if exists
       const currentProperty = property && property.id === Number(id) ? property : null;
       
-      // Merge with current data if available
+    
       const mergedData = currentProperty 
         ? { ...transformToFormFormat(currentProperty), ...propertyData } 
         : propertyData;
-      
-      // Transform to API format
+
       const apiData = transformToApiFormat(mergedData as PropertyFormData);
       
       let response: ApiResponse<Property>;

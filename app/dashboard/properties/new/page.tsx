@@ -19,7 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Upload, X, MapPin } from "lucide-react";
+import { Loader2, Upload, X, MapPin, Router } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import useProperty from "@/hooks/use-property";
 import useAuth from "@/hooks/use-auth";
+import { useRouter } from "next/navigation";
 
 // Amenities configuration
 const amenities = [
@@ -89,7 +90,7 @@ type PropertyFormData = z.infer<typeof propertySchema>;
 export default function PropertyPage() {
   const { createProperty } = useProperty();
   const { user } = useAuth();
-  
+  const  router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -239,6 +240,7 @@ export default function PropertyPage() {
 
   // Form submission
   const onSubmit = async (data: PropertyFormData) => {
+    console.log("Form data before submission:", data)
     setIsSubmitting(true);
     
     try {
@@ -247,11 +249,15 @@ export default function PropertyPage() {
         ...data,
         amenity_ids: data.amenity_ids || []
       };
+
+      console.log("Submitting data:", submitData);
       const result = await createProperty(submitData);
       
       if (result) {
         toast.success("Property submitted successfully!");
         setPreviewOpen(true);
+
+        
       } else {
         toast.error("Failed to submit property. Please try again.");
       }
