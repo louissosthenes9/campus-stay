@@ -21,9 +21,8 @@ export interface Property {
     name: string;
     title: string;
     description: string;
-    broker: number; // User ID from auth context
     property_type: string;
-    price: string; // API expects string despite form using number
+    price: string; 
     bedrooms: number;
     toilets: number;
     address: string;
@@ -35,7 +34,7 @@ export interface Property {
     windows_type: string;
     electricity_type: string;
     water_supply: boolean;
-    size: string; // API expects string despite form using number
+    size: string; 
     safety_score: string;
     transportation_score: string;
     amenities_score: string;
@@ -86,7 +85,6 @@ export interface PaginatedResponse<T> {
 // Filters for property search
 export interface PropertyFilters {
   property_type?: string;
-  broker?: number;
   price?: string;
   bedrooms?: number;
   toilets?: number;
@@ -158,7 +156,6 @@ export default function useProperty() {
         name: formData.name,
         title: formData.title,
         description: formData.description,
-        broker: Number(user?.id),
         property_type: formData.property_type,
         price: formData.price.toString(), // Convert number to string
         bedrooms: formData.bedrooms,

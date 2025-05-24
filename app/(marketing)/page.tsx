@@ -15,7 +15,6 @@ import Image from 'next/image';
 import BookingProcess from './sections/BookingProcess';
 import HeroSection from './sections/HeroSection';
 import Testmonials from './sections/Testmonials';
-import BrokerSection from './sections/BrokerSection';
 import FeaturedListings from './sections/FeaturedListings';
 import UniversitySection from './sections/UniversitySection';
 import RoomSection from './sections/RoomSection';
@@ -25,7 +24,6 @@ import { useAuthContext } from '@/contexts/AuthContext';
 
 export default function HomePage() {
   const {isAuthenticated, user} = useAuthContext()
-  console.log("User Authenticated", user)
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
@@ -37,14 +35,6 @@ export default function HomePage() {
         <UniversitySection/>
         <BookingProcess />
         <RoomSection />
-
-        {
-          isAuthenticated && user?.roles === 'student' ? (
-            <div></div>
-          ):(
-            <BrokerSection />
-          )
-        }
        
          {
           isAuthenticated ? (

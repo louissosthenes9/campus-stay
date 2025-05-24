@@ -6,8 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google'
 import * as z from "zod"
 import { 
-  Check, ChevronRight, ChevronsRight, User, Building, 
-  Loader2, HomeIcon, Mail, Lock, UserCircle, GraduationCap, Briefcase, Phone
+  Check, ChevronRight, ChevronsRight, User, 
+  Loader2, HomeIcon, Mail, Lock, UserCircle, GraduationCap, Phone
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -41,12 +41,10 @@ const formSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   confirm_password: z.string(),
-  roles: z.enum(["student", "broker","admin"]),
+  roles: z.enum(["student", "admin"]),
   // Student specific fields
   university: z.string().optional(),
   course: z.string().optional(),
-  //broker specific fields
-  company_name: z.string().optional(),
 }).refine(data => data.password === data.confirm_password, {
   message: "Passwords do not match",
   path: ["confirm_password"],
@@ -61,13 +59,10 @@ interface RegisterData {
   first_name: string;
   last_name: string;
   mobile: string;
-  roles: "student" | "broker" | "admin";
+  roles: "student" | "admin";
   student_profile?: {
     university: number | undefined;
     course: string | undefined;
-  };
-  broker_profile?: {
-    company_name: string | undefined;
   };
 }
 
@@ -138,7 +133,7 @@ export default function Page() {
     switch (stepNumber) {
       case 1: return ["roles"];
       case 2: return ["first_name", "last_name", "mobile", "username", "email", "password", "confirm_password"];
-      case 3: return userType === "student" ? ["university", "course"] : ["company_name"];
+      case 3: return ["university", "course"];
       default: return [];
     }
   };
@@ -197,7 +192,7 @@ export default function Page() {
     if (step < totalSteps) return;
     
     setShowLoadingAnimation(true);
-    const userTypeForApi = data.roles === "broker" ? "broker" : data.roles;
+    const userTypeForApi = data.roles;
     
     const registerData: RegisterData = {
       username: data.username,
@@ -206,7 +201,7 @@ export default function Page() {
       first_name: data.first_name,
       last_name: data.last_name,
       mobile: data.mobile,
-      roles: userTypeForApi as "student" | "broker" | "admin",
+      roles: userTypeForApi as "student" | "admin",
     };
     
     if (data.roles === "student") {
@@ -215,28 +210,20 @@ export default function Page() {
         course: data.course || "Undeclared"
       };
     }
-    
-    if (data.roles === "broker") {
-      registerData.broker_profile = {
-        company_name: data.company_name
-      };
-    }
 
     const success = await registerUser(registerData);
     setShowLoadingAnimation(false);
     
-    if (userType==="broker" && success) {
-      router.push("/dashboard");
-    } else if (userType==="student" && success) {
+    if (success) {
       router.push("/");
     }
   };
 
   const getStepIcon = (stepNum: number) => {
     switch (stepNum) {
-      case 1: return userType === "student" ? <GraduationCap className="w-6 h-6" /> : <Briefcase className="w-6 h-6" />;
+      case 1: return <GraduationCap className="w-6 h-6" />;
       case 2: return <UserCircle className="w-6 h-6" />;
-      case 3: return userType === "student" ? <GraduationCap className="w-6 h-6" /> : <Briefcase className="w-6 h-6" />;
+      case 3: return <GraduationCap className="w-6 h-6" />;
       default: return <Check className="w-6 h-6" />;
     }
   };
@@ -245,7 +232,7 @@ export default function Page() {
     switch (stepNum) {
       case 1: return "Select Your Role";
       case 2: return "Personal Information";
-      case 3: return userType === "student" ? "Academic Details" : "Broker Details";
+      case 3: return "Academic Details";
       default: return "";
     }
   };
@@ -379,34 +366,6 @@ export default function Page() {
                                     : "bg-blue-100 text-blue-600"
                                 )}>
                                   {field.value === "student" ? "Selected" : "Select"}
-                                </div>
-                              </Label>
-                              <Label
-                                htmlFor="broker"
-                                className={cn(
-                                  "flex flex-col items-center justify-between rounded-xl border-2 p-6 cursor-pointer transition-all duration-200",
-                                  field.value === "broker" 
-                                    ? "border-blue-600 bg-blue-50 shadow-md" 
-                                    : "border-blue-200 hover:border-blue-300 hover:bg-blue-50"
-                                )}
-                              >
-                                <RadioGroupItem value="broker" id="broker" className="sr-only" />
-                                <div className="mb-4 p-3 bg-blue-100 rounded-full">
-                                  <Building className="h-10 w-10 text-blue-600" />
-                                </div>
-                                <div className="text-center">
-                                  <p className="font-bold text-lg text-blue-800">Broker</p>
-                                  <p className="text-blue-600 mt-2">
-                                    I have accommodations to offer to students
-                                  </p>
-                                </div>
-                                <div className={cn(
-                                  "mt-4 w-full py-2 text-center rounded-lg transition-colors",
-                                  field.value === "broker" 
-                                    ? "bg-blue-600 text-white" 
-                                    : "bg-blue-100 text-blue-600"
-                                )}>
-                                  {field.value === "broker" ? "Selected" : "Select"}
                                 </div>
                               </Label>
                             </RadioGroup>
@@ -572,7 +531,7 @@ export default function Page() {
                 )}
                 
                 {/* Step 3: Student Details */}
-                {step === 3 && userType === "student" && (
+                {step === 3 && (
                   <div className="space-y-5">
                     <div className="bg-blue-50 rounded-lg p-4 flex items-center space-x-3 mb-6">
                       <GraduationCap className="h-6 w-6 text-blue-600" />
@@ -617,37 +576,6 @@ export default function Page() {
                           </FormControl>
                           <FormDescription className="text-xs text-blue-600">
                             Enter your field of study or program
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                )}
-                
-                {/* Step 3:Broker Details */}
-                {step === 3 && userType === "broker" && (
-                  <div className="space-y-5">
-                    <div className="bg-blue-50 rounded-lg p-4 flex items-center space-x-3 mb-6">
-                      <Building className="h-6 w-6 text-blue-600" />
-                      <p className="text-blue-700">Complete your Broker profile to start listing your accommodations</p>
-                    </div>
-                    
-                    <FormField
-                      control={form.control}
-                      name="company_name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-blue-700">Company/Business Name</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Your Property Business" 
-                              className="border-blue-200 focus:border-blue-400" 
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormDescription className="text-xs text-blue-600">
-                            This will be displayed on your property listings
                           </FormDescription>
                           <FormMessage />
                         </FormItem>

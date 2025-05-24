@@ -21,7 +21,6 @@ export default function Header() {
     { name: 'Home', href: '#home' },
     { name: 'Listings', href: '#listings' },
     { name: 'Universities', href: '#universities' },
-    { name: 'Brokers', href: '#brokers' },
     { name: 'Contact', href: '#contact' },
   ];
 

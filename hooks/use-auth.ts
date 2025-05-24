@@ -11,9 +11,8 @@ interface User {
   email: string;
   first_name: string;
   last_name: string;
-  roles?: 'student' | 'broker' | 'admin';
+  roles?: 'student' | 'admin';
   student_profile?: any;
-  broker_profile?: any;
 }
 
 interface AuthTokens {
@@ -32,9 +31,8 @@ interface RegisterData {
   password: string;
   first_name?: string;
   last_name?: string;
-  roles: 'student' | 'broker' | 'admin';
+  roles: 'student' | 'admin';
   student_profile?: any;
-  broker_profile?: any;
 }
 
 interface GoogleLoginResponse {
@@ -47,16 +45,15 @@ interface GoogleLoginResponse {
   last_name?: string;
   google_id?: string;
   temp_token?: string;
-  roles?: 'student' | 'broker' | 'admin';
+  roles?: 'student'  | 'admin';
 }
 
 interface OnboardingData {
   temp_token: string;
-  roles: 'student' | 'broker';
+  roles: 'student';
   first_name?: string;
   last_name?: string;
   student_profile?: any;
-  broker_profile?: any;
 }
 
 interface DecodedToken {
@@ -65,10 +62,9 @@ interface DecodedToken {
   email?: string;
   first_name?: string;
   last_name?: string;
-  roles?: 'student' | 'broker' | 'admin';
+  roles?: 'student' | 'admin';
   exp: number;
   student_profile?: any;
-  broker_profile?: any;
   [key: string]: any;
 }
 
@@ -124,7 +120,7 @@ export default function useAuth() {
         last_name: decoded.last_name || '',
         roles: decoded.roles,
         student_profile: decoded.student_profile,
-        broker_profile: decoded.broker_profile,
+
       };
     } catch (err) {
       return null;

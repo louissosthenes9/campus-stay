@@ -36,8 +36,6 @@ export default function LoginPage() {
       const redirectUrl = (() => {
         switch (user?.roles) {
           case 'admin':
-            return '/staff/dashboard';
-          case 'broker':
             return '/dashboard';
           default:
             return '/';

@@ -54,7 +54,7 @@ export default function useApi() {
 
         // Convert data to FormData if needed
         Object.entries(data).forEach(([key, value]) => {
-          // Handle nested objects for student_profile and broker_profile
+          // Handle nested objects for student_profile 
           if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
             Object.entries(value).forEach(([nestedKey, nestedValue]) => {
               formData.append(`${key}.${nestedKey}`, nestedValue as string);
