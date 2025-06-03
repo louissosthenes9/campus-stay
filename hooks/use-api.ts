@@ -66,7 +66,6 @@ export default function useApi() {
 
         config.data = formData;
       } else {
-        // For JSON content type
         config.data = data;
       }
     } else if (data && method === "GET") {

@@ -250,12 +250,8 @@ export default function PropertyPage() {
         amenity_ids: data.amenity_ids || []
       };
 
-      console.log("Submitting data:", submitData);
-     // const result = await createProperty(submitData);
-     await new Promise((resolve) => setTimeout(resolve, 1500)); // Simulate network delay
+     const result = await createProperty(submitData);
 
-    
-      let result =true
       if (result) {
         toast.success("Property submitted successfully!");
         setPreviewOpen(true);

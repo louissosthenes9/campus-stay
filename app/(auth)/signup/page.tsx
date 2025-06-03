@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { set, useForm } from "react-hook-form"
+import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google'
 import * as z from "zod"
@@ -14,8 +14,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -41,8 +39,6 @@ const formSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   confirm_password: z.string(),
-  roles: z.enum(["student", "admin"]),
-  // Student specific fields
   university: z.string().optional(),
   course: z.string().optional(),
 }).refine(data => data.password === data.confirm_password, {
@@ -68,7 +64,7 @@ interface RegisterData {
 
 export default function Page() {
   const [step, setStep] = useState(1);
-  const [totalSteps, setTotalSteps] = useState(3);
+  const totalSteps = 2;
   const [isGoogleBtnVisible, setIsGoogleBtnVisible] = useState(true);
   const { register: registerUser, loading, error, googleLogin } = useAuth();
   const router = useRouter();
@@ -85,14 +81,12 @@ export default function Page() {
       password: "",
       mobile: "",
       confirm_password: "",
-      roles: "student",
       university: "",
       course: "", 
     },
     mode: "onChange"
   });
 
-  const userType = form.watch("roles");
   const selectedUniversity = form.watch("university");
   
   const [campusOptions, setCampusOptions] = useState<{id: string, name: string}[]>([]);
@@ -101,7 +95,7 @@ export default function Page() {
     if (selectedUniversity) {
       const getCampusOptions = () => {
         const campusMap: Record<string, {id: string, name: string}[]> = {
-          "harvard": [
+          "7": [
             { id: "harvard-main", name: "Cambridge Main Campus" },
             { id: "harvard-medical", name: "Longwood Medical Area" }
           ]
@@ -119,21 +113,20 @@ export default function Page() {
     form.trigger(currentFields as any).then(isValid => {
       if (isValid) {
         setStep(prev => Math.min(prev + 1, totalSteps));
-        window.scrollTo(0, 0);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     });
   };
   
   const prevStep = () => {
     setStep(prev => Math.max(prev - 1, 1));
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   
   const getFieldsForStep = (stepNumber: number) => {
     switch (stepNumber) {
-      case 1: return ["roles"];
-      case 2: return ["first_name", "last_name", "mobile", "username", "email", "password", "confirm_password"];
-      case 3: return ["university", "course"];
+      case 1: return ["first_name", "last_name", "mobile", "username", "email", "password", "confirm_password"];
+      case 2: return ["university", "course"];
       default: return [];
     }
   };
@@ -165,7 +158,7 @@ export default function Page() {
           setIsGoogleBtnVisible(false);
           setStep(1);
           toast.info("Complete your registration", {
-            description: "Please select your role and complete the remaining information.",
+            description: "Please provide your academic information to continue.",
           });
         }
       } else {
@@ -192,7 +185,6 @@ export default function Page() {
     if (step < totalSteps) return;
     
     setShowLoadingAnimation(true);
-    const userTypeForApi = data.roles;
     
     const registerData: RegisterData = {
       username: data.username,
@@ -201,15 +193,12 @@ export default function Page() {
       first_name: data.first_name,
       last_name: data.last_name,
       mobile: data.mobile,
-      roles: userTypeForApi as "student" | "admin",
-    };
-    
-    if (data.roles === "student") {
-      registerData.student_profile = {
+      roles: "student",
+      student_profile: {
         university: parseInt(data.university || "0", 10) || 1,
         course: data.course || "Undeclared"
-      };
-    }
+      }
+    };
 
     const success = await registerUser(registerData);
     setShowLoadingAnimation(false);
@@ -221,183 +210,130 @@ export default function Page() {
 
   const getStepIcon = (stepNum: number) => {
     switch (stepNum) {
-      case 1: return <GraduationCap className="w-6 h-6" />;
-      case 2: return <UserCircle className="w-6 h-6" />;
-      case 3: return <GraduationCap className="w-6 h-6" />;
+      case 1: return <UserCircle className="w-6 h-6" />;
+      case 2: return <GraduationCap className="w-6 h-6" />;
       default: return <Check className="w-6 h-6" />;
     }
   };
 
   const getStepTitle = (stepNum: number) => {
     switch (stepNum) {
-      case 1: return "Select Your Role";
-      case 2: return "Personal Information";
-      case 3: return "Academic Details";
+      case 1: return "Personal Information";
+      case 2: return "Academic Details";
       default: return "";
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50 py-10 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-100 py-12 px-4 sm:px-6 lg:px-8">
       {showLoadingAnimation && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="text-center">
-            <div className="relative w-24 h-24 mx-auto mb-8">
+            <div className="relative w-24 h-24 mx-auto mb-6">
               <div className="absolute inset-0 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
               <div className="absolute inset-3 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin animation-delay-150"></div>
-              <div className="absolute inset-6 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin animation-delay-300"></div>
             </div>
-            <div className="text-white text-xl font-medium">Creating your account...</div>
-            <p className="text-blue-200 mt-2">Please wait while we set up your profile</p>
+            <div className="text-white text-xl font-semibold">Creating your account...</div>
+            <p className="text-blue-200 mt-2 text-sm">Please wait while we set up your profile</p>
           </div>
         </div>
       )}
 
-      <div className="container mx-auto max-w-4xl">
-        <Card className="w-full shadow-lg border-0 overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6">
-            <div className="flex items-center space-x-3">
-              <HomeIcon className="h-8 w-8" />
-              <h1 className="text-2xl font-bold">Campus Stay</h1>
+      <div className="container mx-auto max-w-lg">
+        <Card className="w-full shadow-2xl border-0 rounded-2xl overflow-hidden bg-white">
+          <div className="bg-gradient-to-r from-blue-700 to-indigo-700 text-white p-8">
+            <div className="flex items-center space-x-4">
+              <HomeIcon className="h-10 w-10" />
+              <h1 className="text-3xl font-extrabold tracking-tight">Campus Stay</h1>
             </div>
-            <p className="mt-2 text-blue-100">Find your perfect accommodation near your university</p>
+            <p className="mt-3 text-blue-100 text-sm font-medium">
+              Discover your ideal student accommodation near your university
+            </p>
           </div>
           
-          <CardHeader>
+          <CardHeader className="pt-8 pb-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-blue-700">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-50 text-blue-600">
                   {getStepIcon(step)}
                 </div>
-                <CardTitle className="text-xl">{getStepTitle(step)}</CardTitle>
+                <CardTitle className="text-2xl font-bold text-gray-800">{getStepTitle(step)}</CardTitle>
               </div>
-              <div className="text-sm font-medium bg-blue-100 text-blue-700 px-3 py-1 rounded-full">
+              <div className="text-sm font-semibold bg-blue-50 text-blue-600 px-4 py-2 rounded-full">
                 Step {step} of {totalSteps}
               </div>
             </div>
           </CardHeader>
           
-          <div className="px-6">
-            <div className="relative h-2 bg-blue-100 rounded-full overflow-hidden">
+          <div className="px-8">
+            <div className="relative h-2 bg-gray-100 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-blue-600 transition-all duration-500 ease-in-out" 
                 style={{ width: `${(step / totalSteps) * 100}%` }}
               />
             </div>
-            
-            <div className="flex justify-between mt-2">
+            <div className="flex justify-between mt-3">
               {Array.from({length: totalSteps}).map((_, i) => (
                 <div 
                   key={i} 
                   className={cn(
-                    "flex items-center justify-center w-8 h-8 rounded-full text-xs font-medium transition-all duration-300",
+                    "flex items-center justify-center w-10 h-10 rounded-full text-sm font-semibold transition-all duration-300",
                     step > i + 1 ? "bg-blue-600 text-white" : 
-                    step === i + 1 ? "bg-blue-600 text-white ring-4 ring-blue-100" : 
-                    "bg-blue-100 text-blue-600"
+                    step === i + 1 ? "bg-blue-600 text-white ring-4 ring-blue-50" : 
+                    "bg-gray-200 text-gray-600"
                   )}
                 >
-                  {step > i + 1 ? <Check className="w-4 h-4" /> : i + 1}
+                  {step > i + 1 ? <Check className="w-5 h-5" /> : i + 1}
                 </div>
               ))}
             </div>
           </div>
           
-          <CardContent className="mt-6 px-8">
+          <CardContent className="mt-8 px-8">
             {/* Show Google signup button only on step 1 and if visible */}
             {step === 1 && isGoogleBtnVisible && (
-              <div className="mb-8 flex flex-col items-center">
-                <h3 className="text-lg font-medium mb-4 text-gray-700">Sign up faster with Google</h3>
+              <div className="mb-10 flex flex-col items-center">
+                <h3 className="text-xl font-semibold text-gray-800 mb-4">Sign up with Google</h3>
                 <GoogleLogin
                   onSuccess={handleGoogleSignupSuccess}
                   onError={handleGoogleSignupError}
                   useOneTap
-                  theme="outline"
+                  theme="filled_blue"
                   size="large"
                   text="signup_with"
-                  shape="rectangular"
+                  shape="pill"
                   logo_alignment="center"
+                  width="300px"
                 />
                 <div className="w-full mt-6 flex items-center gap-4 before:content-[''] before:flex-1 before:border-t before:border-gray-200 after:content-[''] after:flex-1 after:border-t after:border-gray-200">
-                  <span className="text-sm text-gray-500">or continue with email</span>
+                  <span className="text-sm text-gray-500 font-medium">or continue with email</span>
                 </div>
               </div>
             )}
             
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                {/* Step 1: Select Role */}
+                {/* Step 1: Personal Information */}
                 {step === 1 && (
                   <div className="space-y-6">
-                    <FormField
-                      control={form.control}
-                      name="roles"
-                      render={({ field }) => (
-                        <FormItem className="space-y-5">
-                          <FormLabel className="text-blue-700 text-lg">I am joining Campus Stay as...</FormLabel>
-                          <FormControl>
-                            <RadioGroup
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                              className="grid grid-cols-1 md:grid-cols-2 gap-6"
-                            >
-                              <Label
-                                htmlFor="student"
-                                className={cn(
-                                  "flex flex-col items-center justify-between rounded-xl border-2 p-6 cursor-pointer transition-all duration-200",
-                                  field.value === "student" 
-                                    ? "border-blue-600 bg-blue-50 shadow-md" 
-                                    : "border-blue-200 hover:border-blue-300 hover:bg-blue-50"
-                                )}
-                              >
-                                <RadioGroupItem value="student" id="student" className="sr-only" />
-                                <div className="mb-4 p-3 bg-blue-100 rounded-full">
-                                  <GraduationCap className="h-10 w-10 text-blue-600" />
-                                </div>
-                                <div className="text-center">
-                                  <p className="font-bold text-lg text-blue-800">Student</p>
-                                  <p className="text-blue-600 mt-2">
-                                    I'm looking for accommodation near my university or college
-                                  </p>
-                                </div>
-                                <div className={cn(
-                                  "mt-4 w-full py-2 text-center rounded-lg transition-colors",
-                                  field.value === "student" 
-                                    ? "bg-blue-600 text-white" 
-                                    : "bg-blue-100 text-blue-600"
-                                )}>
-                                  {field.value === "student" ? "Selected" : "Select"}
-                                </div>
-                              </Label>
-                            </RadioGroup>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                )}
-                
-                {/* Step 2: Personal Information */}
-                {step === 2 && (
-                  <div className="space-y-5">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField
                         control={form.control}
                         name="first_name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-blue-700">First Name</FormLabel>
+                            <FormLabel className="text-gray-700 font-semibold">First Name</FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <Input 
                                   placeholder="John" 
-                                  className="pl-10 border-blue-200 focus:border-blue-400" 
+                                  className="pl-10 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all rounded-lg" 
                                   {...field} 
                                 />
                                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400 h-5 w-5" />
                               </div>
                             </FormControl>
-                            <FormMessage />
+                            <FormMessage className="text-red-500 text-xs" />
                           </FormItem>
                         )}
                       />
@@ -406,18 +342,18 @@ export default function Page() {
                         name="last_name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-blue-700">Last Name</FormLabel>
+                            <FormLabel className="text-gray-700 font-semibold">Last Name</FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <Input 
                                   placeholder="Doe" 
-                                  className="pl-10 border-blue-200 focus:border-blue-400" 
+                                  className="pl-10 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all rounded-lg" 
                                   {...field} 
                                 />
                                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400 h-5 w-5" />
                               </div>
                             </FormControl>
-                            <FormMessage />
+                            <FormMessage className="text-red-500 text-xs" />
                           </FormItem>
                         )}
                       />
@@ -428,18 +364,18 @@ export default function Page() {
                       name="username"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-blue-700">Username</FormLabel>
+                          <FormLabel className="text-gray-700 font-semibold">Username</FormLabel>
                           <FormControl>
                             <div className="relative">
                               <Input 
                                 placeholder="johndoe" 
-                                className="pl-10 border-blue-200 focus:border-blue-400" 
+                                className="pl-10 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all rounded-lg" 
                                 {...field} 
                               />
                               <UserCircle className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400 h-5 w-5" />
                             </div>
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage className="text-red-500 text-xs" />
                         </FormItem>
                       )}
                     />
@@ -449,19 +385,19 @@ export default function Page() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-blue-700">Email Address</FormLabel>
+                          <FormLabel className="text-gray-700 font-semibold">Email Address</FormLabel>
                           <FormControl>
                             <div className="relative">
                               <Input 
                                 type="email" 
                                 placeholder="john.doe@example.com" 
-                                className="pl-10 border-blue-200 focus:border-blue-400" 
+                                className="pl-10 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all rounded-lg" 
                                 {...field} 
                               />
                               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400 h-5 w-5" />
                             </div>
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage className="text-red-500 text-xs" />
                         </FormItem>
                       )}
                     />
@@ -470,18 +406,18 @@ export default function Page() {
                       name="mobile"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-blue-700">Mobile Number</FormLabel>
+                          <FormLabel className="text-gray-700 font-semibold">Mobile Number</FormLabel>
                           <FormControl>
                             <div className="relative">
                               <Input 
                                 placeholder="+255 123 456 789" 
-                                className="pl-10 border-blue-200 focus:border-blue-400" 
+                                className="pl-10 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all rounded-lg" 
                                 {...field} 
                               />
                               <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400 h-5 w-5" />
                             </div>
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage className="text-red-500 text-xs" />
                         </FormItem>
                       )}
                     />
@@ -491,18 +427,18 @@ export default function Page() {
                         name="password"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-blue-700">Password</FormLabel>
+                            <FormLabel className="text-gray-700 font-semibold">Password</FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <Input 
                                   type="password" 
-                                  className="pl-10 border-blue-200 focus:border-blue-400" 
+                                  className="pl-10 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all rounded-lg" 
                                   {...field} 
                                 />
                                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400 h-5 w-5" />
                               </div>
                             </FormControl>
-                            <FormMessage />
+                            <FormMessage className="text-red-500 text-xs" />
                           </FormItem>
                         )}
                       />
@@ -511,18 +447,18 @@ export default function Page() {
                         name="confirm_password"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-blue-700">Confirm Password</FormLabel>
+                            <FormLabel className="text-gray-700 font-semibold">Confirm Password</FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <Input 
                                   type="password" 
-                                  className="pl-10 border-blue-200 focus:border-blue-400" 
+                                  className="pl-10 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all rounded-lg" 
                                   {...field} 
                                 />
                                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400 h-5 w-5" />
                               </div>
                             </FormControl>
-                            <FormMessage />
+                            <FormMessage className="text-red-500 text-xs" />
                           </FormItem>
                         )}
                       />
@@ -530,12 +466,14 @@ export default function Page() {
                   </div>
                 )}
                 
-                {/* Step 3: Student Details */}
-                {step === 3 && (
-                  <div className="space-y-5">
-                    <div className="bg-blue-50 rounded-lg p-4 flex items-center space-x-3 mb-6">
-                      <GraduationCap className="h-6 w-6 text-blue-600" />
-                      <p className="text-blue-700">Complete your academic profile to find the perfect accommodation near your campus</p>
+                {/* Step 2: Academic Details */}
+                {step === 2 && (
+                  <div className="space-y-6">
+                    <div className="bg-blue-50 rounded-lg p-4 flex items-center space-x-3">
+                      <GraduationCap className="h-6 w-6 text-blue-600 flex-shrink-0" />
+                      <p className="text-gray-700 text-sm font-medium">
+                        Provide your academic details to help us find the best accommodation near your campus
+                      </p>
                     </div>
                     
                     <FormField
@@ -543,20 +481,22 @@ export default function Page() {
                       name="university"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-blue-700">University/College</FormLabel>
+                          <FormLabel className="text-gray-700 font-semibold">University/College</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
-                              <SelectTrigger className="border-blue-200">
+                              <SelectTrigger className="border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg">
                                 <SelectValue placeholder="Select your university" />
                               </SelectTrigger>
                             </FormControl>
-                            <SelectContent>
+                            <SelectContent className="bg-white border-gray-200">
                               {universities.map(uni => (
-                                <SelectItem key={uni.id} value={uni.id}>{uni.name}</SelectItem>
+                                <SelectItem key={uni.id} value={uni.id} className="text-gray-700 hover:bg-blue-50">
+                                  {uni.name}
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
-                          <FormMessage />
+                          <FormMessage className="text-red-500 text-xs" />
                         </FormItem>
                       )}
                     />
@@ -566,18 +506,18 @@ export default function Page() {
                       name="course"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-blue-700">Course/Program</FormLabel>
+                          <FormLabel className="text-gray-700 font-semibold">Course/Program</FormLabel>
                           <FormControl>
                             <Input 
                               placeholder="e.g. Computer Science, Business Administration" 
-                              className="border-blue-200 focus:border-blue-400" 
+                              className="border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all rounded-lg" 
                               {...field} 
                             />
                           </FormControl>
-                          <FormDescription className="text-xs text-blue-600">
+                          <FormDescription className="text-xs text-gray-500">
                             Enter your field of study or program
                           </FormDescription>
-                          <FormMessage />
+                          <FormMessage className="text-red-500 text-xs" />
                         </FormItem>
                       )}
                     />
@@ -585,7 +525,7 @@ export default function Page() {
                 )}
 
                 {error && (
-                  <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm flex items-center space-x-2">
+                  <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm flex items-center space-x-3">
                     <div className="flex-shrink-0 w-5 h-5 text-red-500">⚠️</div>
                     <div>{error}</div>
                   </div>
@@ -594,13 +534,13 @@ export default function Page() {
             </Form>
           </CardContent>
           
-          <CardFooter className="flex justify-between p-8 bg-gradient-to-r from-blue-50 to-indigo-50">
+          <CardFooter className="flex justify-between p-8 bg-gray-50">
             <Button
               type="button"
               variant="outline"
               onClick={prevStep}
               disabled={step === 1 || loading}
-              className="border-blue-300 hover:bg-blue-100 text-blue-700"
+              className="border-gray-300 hover:bg-gray-100 text-gray-700 font-semibold rounded-lg px-6 py-2"
             >
               Back
             </Button>
@@ -610,7 +550,7 @@ export default function Page() {
                 type="button"
                 onClick={nextStep}
                 disabled={loading}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2 h-auto"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-lg px-6 py-2"
               >
                 Continue
                 <ChevronRight className="ml-2 h-5 w-5" />
@@ -619,7 +559,7 @@ export default function Page() {
               <Button 
                 onClick={form.handleSubmit(onSubmit)}
                 disabled={loading}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2 h-auto"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-lg px-6 py-2"
               >
                 {loading ? (
                   <>

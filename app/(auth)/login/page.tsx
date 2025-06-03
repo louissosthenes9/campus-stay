@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { toast } from "sonner"
+import { toast } from "sonner";
 import useAuth from '@/hooks/use-auth';
 
 // Form validation schema
@@ -123,7 +123,6 @@ export default function LoginPage() {
     return <LoginSkeleton />;
   }
 
-
   return (
     <div className="min-h-screen bg-muted flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -163,10 +162,9 @@ export default function LoginPage() {
                   onSuccess={handleGoogleSuccess}
                   onError={handleGoogleError}
                   useOneTap
-                  theme="outline"
                   size="large"
                   text="signin_with"
-                  shape="rectangular"
+                  shape="pill"
                   logo_alignment="center"
                 />
               )}
