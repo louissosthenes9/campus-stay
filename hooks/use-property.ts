@@ -89,7 +89,7 @@ export interface PropertyFormData {
   bedrooms: number;
   toilets: number;
   address: string;
-  location?: { // Changed from geometry to location to match Django model
+  geometry?: { 
     type: 'Point';
     coordinates: [number, number];
   };
@@ -199,36 +199,15 @@ export default function useProperty() {
     };
 
     // Add location if provided
-    if (formData.location) {
-      apiData.location = formData.location;
+    if (formData.geometry) {
+      apiData.location = formData.geometry;
+      apiData.geometry = formData.geometry
     }
 
     return apiData;
   };
 
-  // Transform API response to form data structure
-  const transformToFormFormat = (property: Property): PropertyFormData => {
-    return {
-      title: property.properties.title,
-      name: property.properties.name,
-      description: property.properties.description,
-      property_type: property.properties.property_type,
-      price: property.properties.price,
-      bedrooms: property.properties.bedrooms,
-      toilets: property.properties.toilets,
-      address: property.properties.address,
-      location: property.geometry,
-      size: property.properties.size,
-      available_from: property.properties.available_from,
-      lease_duration: property.properties.lease_duration,
-      is_furnished: property.properties.is_furnished,
-      is_fenced: property.properties.is_fenced,
-      windows_type: property.properties.windows_type,
-      electricity_type: property.properties.electricity_type,
-      water_supply: property.properties.water_supply,
-      amenity_ids: property.amenities?.map(a => a.amenity) || []
-    };
-  };
+
 
   // Fetch properties with filters
   const fetchProperties = useCallback(async (filters: PropertyFilters = {}): Promise<PaginatedResponse<Property> | null> => {
@@ -328,7 +307,7 @@ export default function useProperty() {
         formData,
         {
           ...authHeaders(),
-          // Don't set Content-Type, let browser set it with boundary for multipart
+          'Content-Type': 'multipart/form-data' 
         }
       );
       
