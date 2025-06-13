@@ -2,36 +2,20 @@
 import { useState, useCallback } from 'react';
 import useApi from './use-api'; 
 import useAuth from './use-auth';
-import  Property  from '@/types/properties';
+import { PropertyFormData,Property  } from '@/types/properties';
 
-// Interface for form data structure from PropertyForm
-export interface PropertyFormData {
-  title: string;
-  name: string;
-  description: string;
-  property_type: string;
-  price: number;
-  bedrooms: number;
-  toilets: number;
-  address: string;
-  geometry?: { 
-    type: 'Point';
-    coordinates: [number, number];
+
+interface BackendPropertyResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: {
+    type: 'FeatureCollection';
+    features: Property[];
   };
-  size: number;
-  available_from: string;
-  lease_duration: number;
-  is_furnished: boolean;
-  is_fenced: boolean;
-  windows_type: string;
-  electricity_type: string;
-  water_supply: boolean;
-  images?: File[];
-  videos?: File[]; 
-  amenity_ids: number[];
 }
 
-// For paginated responses
+// Simplified paginated response for easier use
 export interface PaginatedResponse<T> {
   count: number;
   next: string | null;
@@ -47,11 +31,11 @@ export interface PropertyFilters {
   toilets?: number;
   is_furnished?: boolean;
   university_id?: string;
-  distance?: number; 
+  distance?: number;
   search?: string;
-  ordering?: string; 
-  page?: number; 
-  page_size?: number; 
+  ordering?: string;
+  page?: number;
+  page_size?: number;
 }
 
 // API response structure
@@ -61,16 +45,6 @@ interface ApiResponse<T = any> {
   success: boolean;
   error?: string;
 }
-
-// Auth hook interface
-interface AuthHook {
-  authHeaders: () => Record<string, string>;
-  user: {
-    id: number;
-    roles?: string;
-  };
-}
-
 // API hook interface
 interface ApiHook {
   performGetRequest: <T>(endpoint: string, params?: object, headers?: object) => Promise<ApiResponse<T>>;
@@ -88,7 +62,7 @@ export default function useProperty() {
     performPutRequest,
     performPatchRequest,
     performDeleteRequest,
-    performRequest,
+
   } = useApi() as ApiHook;
   
   const { authHeaders, user } = useAuth();
@@ -101,14 +75,24 @@ export default function useProperty() {
   
   const API_ENDPOINT = '/properties/';
   
-  // Transform form data to match Django model structure
+  // Helper function to transform backend response to simplified structure
+  const transformBackendResponse = (backendResponse: BackendPropertyResponse): PaginatedResponse<Property> => {
+    return {
+      count: backendResponse.count,
+      next: backendResponse.next,
+      previous: backendResponse.previous,
+      results: backendResponse.results.features || []
+    };
+  };
+
+  // Transform form data to match Django API format
   const transformToApiFormat = (formData: PropertyFormData) => {
     const apiData: any = {
       name: formData.name,
       title: formData.title,
       description: formData.description,
       property_type: formData.property_type,
-      price: formData.price, // Keep as number
+      price: formData.price,
       bedrooms: formData.bedrooms,
       toilets: formData.toilets,
       address: formData.address,
@@ -119,7 +103,7 @@ export default function useProperty() {
       windows_type: formData.windows_type,
       electricity_type: formData.electricity_type,
       water_supply: formData.water_supply,
-      size: formData.size, // Keep as number
+      size: formData.size,
       amenity_ids: formData.amenity_ids || [],
     };
 
@@ -131,24 +115,23 @@ export default function useProperty() {
     return apiData;
   };
 
-
-
   // Fetch properties with filters
   const fetchProperties = useCallback(async (filters: PropertyFilters = {}): Promise<PaginatedResponse<Property> | null> => {
     setLoading(true);
     setError(null);
     
     try {
-      const response = await performGetRequest<PaginatedResponse<Property>>(API_ENDPOINT, filters, authHeaders());
+      const response = await performGetRequest<BackendPropertyResponse>(API_ENDPOINT, filters, authHeaders());
       
       if (response.success) {
-        setProperties(response.data.results || []); 
+        const transformedData = transformBackendResponse(response.data);
+        setProperties(transformedData.results);
         setPagination({
-          count: response.data.count,
-          next: response.data.next,
-          previous: response.data.previous,
+          count: transformedData.count,
+          next: transformedData.next,
+          previous: transformedData.previous,
         });
-        return response.data;
+        return transformedData;
       } else {
         setError(response.error || 'Failed to fetch properties');
         setProperties([]);
@@ -428,6 +411,9 @@ export default function useProperty() {
       const response = await performDeleteRequest<null>(`${API_ENDPOINT}${id}/`, {}, authHeaders());
       
       if (response.success) {
+        // Remove from local state
+        setProperties(prev => prev.filter(p => p.id !== Number(id)));
+        setProperty(prev => prev && prev.id === Number(id) ? null : prev);
         return true;
       } else {
         setError(response.error || `Failed to delete property ${id}`);
@@ -452,15 +438,16 @@ export default function useProperty() {
         params.distance = distance;
       }
       
-      const response = await performGetRequest<Property[]>(
+      const response = await performGetRequest<BackendPropertyResponse>(
         `${API_ENDPOINT}near-university/`, 
         params, 
         authHeaders()
       );
       
       if (response.success) {
-        setProperties(response.data || []);
-        return response.data;
+        const transformedData = transformBackendResponse(response.data);
+        setProperties(transformedData.results);
+        return transformedData.results;
       } else {
         setError(response.error || 'Failed to fetch properties near university');
         setProperties([]);
@@ -475,20 +462,77 @@ export default function useProperty() {
     }
   }, [performGetRequest, authHeaders]);
 
+  // Helper functions for easier property data access
+  const getPropertyCoordinates = (property: Property): [number, number] => {
+    return property.geometry.coordinates;
+  };
+
+  const getPropertyPrice = (property: Property): number => {
+    return property.properties.price;
+  };
+
+  const getPropertyTitle = (property: Property): string => {
+    return property.properties.title;
+  };
+
+  const getPropertyAddress = (property: Property): string => {
+    return property.properties.address;
+  };
+
+  const isPropertyAvailable = (property: Property): boolean => {
+    return property.properties.is_available;
+  };
+
+  const getPropertyPrimaryImage = (property: Property): string | null => {
+    return property.primary_image;
+  };
+
+  // Clear error
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
+  // Reset state
+  const resetState = useCallback(() => {
+    setProperties([]);
+    setProperty(null);
+    setError(null);
+    setPagination(null);
+  }, []);
+
   return {
+    // State
     properties,
     property,
     loading,
     error,
     pagination,
+    
+    // CRUD operations
     fetchProperties,
     fetchPropertyById,
     createProperty,
     updateProperty,
     patchProperty,
     deleteProperty,
+    
+    // Media operations
     addMedia,
     removeMedia,
+    
+    // Special queries
     fetchPropertiesNearUniversity,
+    
+    // Helper functions
+    getPropertyCoordinates,
+    getPropertyPrice,
+    getPropertyTitle,
+    getPropertyAddress,
+    isPropertyAvailable,
+    getPropertyPrimaryImage,
+    
+    // Utility functions
+    clearError,
+    resetState,
   };
 }

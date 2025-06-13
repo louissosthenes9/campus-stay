@@ -132,7 +132,7 @@ export default function useAuth() {
     if (!tokens?.refresh) return false;
 
     try {
-      const response = await performPostRequest<{ access: string }>('/token/refresh/', {
+      const response = await performPostRequest<{ access: string }>('/auth/token/refresh/', {
         refresh: tokens.refresh
       });
 
