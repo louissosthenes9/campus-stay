@@ -27,7 +27,7 @@ export default function PropertyPage() {
   // Fetch properties when component mounts
   useEffect(() => {
     fetchProperties();
-  }, [fetchProperties]);
+  }, []);
 
   // Handle property deletion
   const handleDeleteProperty = async (propertyId: number) => {

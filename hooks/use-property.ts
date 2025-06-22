@@ -2,8 +2,7 @@
 import { useState, useCallback } from 'react';
 import useApi from './use-api'; 
 import useAuth from './use-auth';
-import { PropertyFormData,Property  } from '@/types/properties';
-
+import { PropertyFormData, Property } from '@/types/properties';
 
 interface BackendPropertyResponse {
   count: number;
@@ -13,6 +12,39 @@ interface BackendPropertyResponse {
     type: 'FeatureCollection';
     features: Property[];
   };
+}
+
+// Marketing categories response structure
+interface MarketingCategoriesResponse {
+  popular: {
+    type: 'FeatureCollection';
+    features: Property[];
+  };
+  near_university: {
+    type: 'FeatureCollection';
+    features: Property[];
+  };
+  top_rated: {
+    type: 'FeatureCollection';
+    features: Property[];
+  };
+  special_needs: {
+    type: 'FeatureCollection';
+    features: Property[];
+  };
+  cheap: {
+    type: 'FeatureCollection';
+    features: Property[];
+  };
+}
+
+// Processed marketing categories for easier use
+export interface MarketingCategories {
+  popular: Property[];
+  near_university: Property[];
+  top_rated: Property[];
+  special_needs: Property[];
+  cheap: Property[];
 }
 
 // Simplified paginated response for easier use
@@ -45,6 +77,7 @@ interface ApiResponse<T = any> {
   success: boolean;
   error?: string;
 }
+
 // API hook interface
 interface ApiHook {
   performGetRequest: <T>(endpoint: string, params?: object, headers?: object) => Promise<ApiResponse<T>>;
@@ -62,7 +95,6 @@ export default function useProperty() {
     performPutRequest,
     performPatchRequest,
     performDeleteRequest,
-
   } = useApi() as ApiHook;
   
   const { authHeaders, user } = useAuth();
@@ -73,6 +105,11 @@ export default function useProperty() {
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState<Omit<PaginatedResponse<any>, 'results'> | null>(null);
   
+  // Marketing categories state
+  const [marketingCategories, setMarketingCategories] = useState<MarketingCategories | null>(null);
+  const [marketingLoading, setMarketingLoading] = useState<boolean>(false);
+  const [marketingError, setMarketingError] = useState<string | null>(null);
+  
   const API_ENDPOINT = '/properties/';
   
   // Helper function to transform backend response to simplified structure
@@ -82,6 +119,17 @@ export default function useProperty() {
       next: backendResponse.next,
       previous: backendResponse.previous,
       results: backendResponse.results.features || []
+    };
+  };
+
+  // Transform marketing categories response
+  const transformMarketingResponse = (marketingResponse: MarketingCategoriesResponse): MarketingCategories => {
+    return {
+      popular: marketingResponse.popular.features || [],
+      near_university: marketingResponse.near_university.features || [],
+      top_rated: marketingResponse.top_rated.features || [],
+      special_needs: marketingResponse.special_needs.features || [],
+      cheap: marketingResponse.cheap.features || [],
     };
   };
 
@@ -114,6 +162,36 @@ export default function useProperty() {
 
     return apiData;
   };
+
+  // Fetch marketing categories
+  const fetchMarketingCategories = useCallback(async (): Promise<MarketingCategories | null> => {
+    setMarketingLoading(true);
+    setMarketingError(null);
+    
+    try {
+      const response = await performGetRequest<MarketingCategoriesResponse>(
+        `${API_ENDPOINT}marketing-categories/`, 
+        {}, 
+        authHeaders()
+      );
+      
+      if (response.success) {
+        const transformedData = transformMarketingResponse(response.data);
+        setMarketingCategories(transformedData);
+        return transformedData;
+      } else {
+        setMarketingError(response.error || 'Failed to fetch marketing categories');
+        setMarketingCategories(null);
+        return null;
+      }
+    } catch (err: any) {
+      setMarketingError(err.message || 'An error occurred while fetching marketing categories');
+      setMarketingCategories(null);
+      return null;
+    } finally {
+      setMarketingLoading(false);
+    }
+  }, [performGetRequest, authHeaders]);
 
   // Fetch properties with filters
   const fetchProperties = useCallback(async (filters: PropertyFilters = {}): Promise<PaginatedResponse<Property> | null> => {
@@ -487,9 +565,13 @@ export default function useProperty() {
     return property.primary_image;
   };
 
-  // Clear error
+  // Clear errors
   const clearError = useCallback(() => {
     setError(null);
+  }, []);
+
+  const clearMarketingError = useCallback(() => {
+    setMarketingError(null);
   }, []);
 
   // Reset state
@@ -500,6 +582,11 @@ export default function useProperty() {
     setPagination(null);
   }, []);
 
+  const resetMarketingState = useCallback(() => {
+    setMarketingCategories(null);
+    setMarketingError(null);
+  }, []);
+
   return {
     // State
     properties,
@@ -507,6 +594,11 @@ export default function useProperty() {
     loading,
     error,
     pagination,
+    
+    // Marketing categories state
+    marketingCategories,
+    marketingLoading,
+    marketingError,
     
     // CRUD operations
     fetchProperties,
@@ -522,6 +614,7 @@ export default function useProperty() {
     
     // Special queries
     fetchPropertiesNearUniversity,
+    fetchMarketingCategories,
     
     // Helper functions
     getPropertyCoordinates,
@@ -533,6 +626,8 @@ export default function useProperty() {
     
     // Utility functions
     clearError,
+    clearMarketingError,
     resetState,
+    resetMarketingState,
   };
 }
