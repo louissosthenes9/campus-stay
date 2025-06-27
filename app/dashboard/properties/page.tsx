@@ -2,8 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { Plus, Home, MapPin, Loader2, Edit, Trash2, Camera, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, MouseEvent } from 'react';
-import useProperty from '@/hooks/use-property';
+import { useEffect, useState, MouseEvent, KeyboardEvent } from 'react';
 
 interface PropertyImage {
   url: string;
@@ -28,28 +27,35 @@ interface Property {
 }
 
 interface PropertyImageCarouselProps {
-  images: PropertyImage[] | string[];
+  images: (PropertyImage | string)[];
   title: string;
   propertyType: string;
   available: boolean;
-  onImageClick: (images: (string | PropertyImage)[], index: number) => void;
+  onImageClick: (images: (PropertyImage | string)[], index: number) => void;
 }
 
 interface ImageModalProps {
-  images: (string | PropertyImage)[];
+  images: (PropertyImage | string)[];
   initialIndex: number;
   isOpen: boolean;
   onClose: () => void;
 }
 
+interface Pagination {
+  next: string | null;
+  previous: string | null;
+  count: number;
+}
+import useProperty from '@/hooks/use-property';
+
 // Property Image Carousel Component
-const PropertyImageCarousel: React.FC<PropertyImageCarouselProps> = ({ 
+const PropertyImageCarousel = ({ 
   images, 
   title, 
   propertyType, 
   available, 
   onImageClick 
-}) => {
+}: PropertyImageCarouselProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -167,7 +173,12 @@ const PropertyImageCarousel: React.FC<PropertyImageCarouselProps> = ({
 };
 
 // Image Modal Component
-const ImageModal: React.FC<ImageModalProps> = ({ images, initialIndex, isOpen, onClose }) => {
+const ImageModal = ({ 
+  images, 
+  initialIndex, 
+  isOpen, 
+  onClose 
+}: ImageModalProps) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
 
   useEffect(() => {
@@ -175,7 +186,7 @@ const ImageModal: React.FC<ImageModalProps> = ({ images, initialIndex, isOpen, o
   }, [initialIndex]);
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: globalThis.KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
       if (e.key === 'ArrowLeft') setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
       if (e.key === 'ArrowRight') setCurrentIndex((prev) => (prev + 1) % images.length);
@@ -207,9 +218,7 @@ const ImageModal: React.FC<ImageModalProps> = ({ images, initialIndex, isOpen, o
         </button>
 
         <img
-          src={typeof images[currentIndex] === 'string' 
-            ? images[currentIndex] as string 
-            : (images[currentIndex] as PropertyImage).url}
+          src={typeof images[currentIndex] === 'string' ? images[currentIndex] as string : (images[currentIndex] as PropertyImage).url}
           alt={`Property image ${currentIndex + 1}`}
           className="max-w-full max-h-full object-contain"
         />
@@ -217,13 +226,13 @@ const ImageModal: React.FC<ImageModalProps> = ({ images, initialIndex, isOpen, o
         {images.length > 1 && (
           <>
             <button
-              onClick={() => setCurrentIndex((prev) => (prev - 1 + images.length) % images.length)}
+              onClick={() => setCurrentIndex((prev: number) => (prev - 1 + images.length) % images.length)}
               className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 bg-black/50 rounded-full p-2"
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
             <button
-              onClick={() => setCurrentIndex((prev) => (prev + 1) % images.length)}
+              onClick={() => setCurrentIndex((prev: number) => (prev + 1) % images.length)}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 bg-black/50 rounded-full p-2"
             >
               <ChevronRight className="w-6 h-6" />
@@ -257,7 +266,11 @@ export default function PropertyPage() {
   } = useProperty();
 
   const [deletingId, setDeletingId] = useState<string | number | null>(null);
-  const [imageModal, setImageModal] = useState<{ isOpen: boolean; images: (string | PropertyImage)[]; initialIndex: number }>({ 
+  const [imageModal, setImageModal] = useState<{
+    isOpen: boolean;
+    images: (string | PropertyImage)[];
+    initialIndex: number;
+  }>({ 
     isOpen: false, 
     images: [], 
     initialIndex: 0 
@@ -439,7 +452,8 @@ export default function PropertyPage() {
             const isDeleting = deletingId === property.id;
             
             // Fix: Access media from the correct path
-            const mediaImages = (property.properties as any).media || [];
+            // Using type assertion for the media property since it's not in the base type
+  const mediaImages = (property.properties as { media?: (string | PropertyImage)[] }).media || [];
             const propertyType = property.properties.property_type_display || property.properties.property_type;
 
             return (
