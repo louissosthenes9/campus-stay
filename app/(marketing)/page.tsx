@@ -20,10 +20,12 @@ import UniversitySection from './sections/UniversitySection';
 import RoomSection from './sections/RoomSection';
 import CallSection from './sections/CallSection';
 import { useAuthContext } from '@/contexts/AuthContext';
+import useProperty from '@/hooks/use-property';
 
 
 export default function HomePage() {
   const {isAuthenticated, user} = useAuthContext()
+  const {properties} = useProperty();
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
@@ -31,7 +33,7 @@ export default function HomePage() {
       <main>
         {/* Sections for the main content*/}
         <HeroSection />
-        <FeaturedListings />
+        <FeaturedListings properties = {properties}/>
         <UniversitySection/>
         <BookingProcess />
         <RoomSection />

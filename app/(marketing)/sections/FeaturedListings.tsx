@@ -5,16 +5,21 @@ import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { ArrowRight, Star } from 'lucide-react';
 import { fadeIn, scaleIn, staggerContainer } from '@/utils/motion';
-import useProperty from '@/hooks/use-property'; // Adjust the import path as needed
-import { Property } from '@/types/properties'; // Adjust the import path as needed
+import useProperty from '@/hooks/use-property'; 
+import { Property } from '@/types/properties'; 
 
-export default function FeaturedListings() {
+type FeaturedListingsProps = {
+  properties?: Property[];
+}
+export default function FeaturedListings(
+  { properties }: FeaturedListingsProps
+) {
   const { 
     marketingCategories, 
     marketingLoading, 
     marketingError, 
     fetchMarketingCategories 
-  } = useProperty();
+  } = useProperty();43
   
   const [selectedRegion, setSelectedRegion] = useState('All Regions');
   const regions = ['All Regions', 'Dar es Salaam', 'Morogoro', 'Dodoma', 'Arusha', 'Mwanza'];
@@ -23,6 +28,7 @@ export default function FeaturedListings() {
   useEffect(() => {
     fetchMarketingCategories();
   }, []);
+  console.log(marketingCategories)
 
   // Get top-rated properties from marketing categories
   const topRatedProperties = marketingCategories?.popular || [];
@@ -34,7 +40,7 @@ export default function FeaturedListings() {
 
   // Helper function to get property image
   const getPropertyImage = (property: Property): string => {
-    return property.primary_image || '/placeholder-image.jpg'; // Fallback image
+    return property.primary_image || '/placeholder-image.jpg'; 
   };
 
  
