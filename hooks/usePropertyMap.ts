@@ -10,11 +10,9 @@ export default function usePropertyMap() {
     setActiveProperty(property);
     
     // Fly to the property location
-    if (property.latitude && property.longitude) {
-      const coordinates: [number, number] = [
-        parseFloat(property.longitude),
-        parseFloat(property.latitude),
-      ];
+    if (property.geometry?.coordinates && property.geometry.coordinates.length >= 2) {
+      const [lng, lat] = property.geometry.coordinates;
+      const coordinates: [number, number] = [Number(lng), Number(lat)];
       
       flyTo(coordinates, 15);
     }
