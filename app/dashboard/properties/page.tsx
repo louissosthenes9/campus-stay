@@ -518,7 +518,7 @@ export default function PropertyPage() {
                   <div className="flex items-center justify-between mb-4">
                     <div className="text-lg font-bold text-indigo-600">
                       <span className="text-sm font-normal text-gray-500">TZS </span>
-                      {price.toLocaleString()}
+                      {(property.properties.price || 0).toLocaleString()}
                     </div>
                     {property.properties.overall_score && (
                       <div className="text-sm text-gray-600">

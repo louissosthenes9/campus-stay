@@ -11,6 +11,7 @@ import { PropertyImage } from '@/types/properties';
 import useProperty from '@/hooks/use-property';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
+import PropertyMapView from '@/components/map/PropertyMapView';
 
 interface PropertyMedia {
   url: string;
@@ -24,7 +25,7 @@ export default function PropertyViewPage() {
   const params = useParams();
   const { id } = params;
   const { fetchPropertyById, loading, error } = useProperty();
-  
+
   const [property, setProperty] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('details');
   const [isFavorite, setIsFavorite] = useState(false);
@@ -79,7 +80,7 @@ export default function PropertyViewPage() {
           <div className="w-full md:w-2/3">
             <Skeleton className="w-full h-96 rounded-lg" />
           </div>
-          
+
           {/* Details Skeleton */}
           <div className="w-full md:w-1/3 space-y-4">
             <Skeleton className="h-8 w-3/4" />
@@ -140,8 +141,8 @@ export default function PropertyViewPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Back Button */}
-      <Button 
-        variant="ghost" 
+      <Button
+        variant="ghost"
         onClick={() => router.back()}
         className="mb-6"
       >
@@ -177,18 +178,18 @@ export default function PropertyViewPage() {
                   </div>
                 </div>
                 <div className="flex space-x-2">
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
+                  <Button
+                    variant="outline"
+                    size="icon"
                     onClick={toggleFavorite}
                     aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
                   >
-                    <Heart 
-                      className={`w-5 h-5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} 
+                    <Heart
+                      className={`w-5 h-5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}`}
                     />
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="icon"
                     onClick={shareProperty}
                     aria-label="Share property"
@@ -235,8 +236,8 @@ export default function PropertyViewPage() {
                 </div>
               </div>
 
-              <Tabs 
-                defaultValue="details" 
+              <Tabs
+                defaultValue="details"
                 value={activeTab}
                 onValueChange={setActiveTab}
                 className="w-full"
@@ -256,7 +257,7 @@ export default function PropertyViewPage() {
                       <p className="text-gray-500 italic">No description provided.</p>
                     )}
                   </div>
-                  
+
                   <div className="mt-6">
                     <h4 className="font-medium text-gray-900 mb-2">Property Details</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -290,7 +291,7 @@ export default function PropertyViewPage() {
                       {amenities.map((amenity: any, index: number) => {
                         // Function to get the appropriate icon component
                         const getAmenityIcon = (name: string) => {
-                          switch(name.toLowerCase()) {
+                          switch (name.toLowerCase()) {
                             case 'wi-fi':
                               return <Wifi className="w-5 h-5 text-indigo-600" />;
                             case 'parking':
@@ -339,20 +340,10 @@ export default function PropertyViewPage() {
                 </TabsContent>
 
                 <TabsContent value="location" className="mt-6">
-                  {address ? (
-                    <div className="h-64 bg-gray-100 rounded-lg overflow-hidden">
-                      {/* Replace with your map component */}
-                      <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                        <div className="text-center p-4">
-                          <MapPin className="w-12 h-12 text-indigo-500 mx-auto mb-2" />
-                          <p className="font-medium">Map View</p>
-                          <p className="text-sm text-gray-500">{address}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 italic">No location information available.</p>
-                  )}
+                  <PropertyMapView
+                    property={property}
+                    nearbyPlaces={property?.properties?.nearby_places || []}
+                  />
                 </TabsContent>
               </Tabs>
             </CardContent>
@@ -376,7 +367,7 @@ export default function PropertyViewPage() {
                   <p className="text-sm text-gray-500">Campus Stay Team</p>
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Button className="w-full" size="lg">
                   <Phone className="w-4 h-4 mr-2" />
@@ -391,7 +382,7 @@ export default function PropertyViewPage() {
                   Schedule Viewing
                 </Button>
               </div>
-              
+
               <div className="pt-4 border-t border-gray-200">
                 <p className="text-sm text-gray-500 text-center">
                   Response time: Usually within 24 hours

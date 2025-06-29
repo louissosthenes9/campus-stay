@@ -3,6 +3,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from '@/contexts/AuthContext';
 import { GoogleOAuthProvider } from '@react-oauth/google'; // Import GoogleOAuthProvider
+import { MapboxProvider } from "@/contexts/MapboxContext";
 export const metadata: Metadata = {
   title: "Campus Stay | Student Accommodation Platform",
   description: "Find verified student accommodation near universities across Tanzania. Secure booking, affordable prices, and stress-free housing experience.",
@@ -27,9 +28,13 @@ export default function RootLayout({
     <html>
       <body className="min-h-screen flex flex-col">
         <GoogleOAuthProvider clientId={googleClientId}>
-        <Toaster  position="top-center"  richColors/>
+          <Toaster position="top-center" richColors />
           <AuthProvider>
-          {children}
+
+            <MapboxProvider>
+              {children}
+            </MapboxProvider>
+
           </AuthProvider>
         </GoogleOAuthProvider>
       </body>

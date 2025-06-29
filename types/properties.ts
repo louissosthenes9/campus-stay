@@ -7,6 +7,8 @@ export interface Property {
     coordinates: [number, number];
   };
   properties: {
+    city: any;
+    primary_image: string;
     amenities: any;
     rating: number;
     review_count: number;

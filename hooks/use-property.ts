@@ -58,28 +58,45 @@ export interface PaginatedResponse<T> {
 // Enhanced filters for property search with all backend-supported options
 export interface PropertyFilters {
   // Basic filters
-  property_type?: string;
-  price?: string;
-  bedrooms?: number;
-  toilets?: number;
-  is_furnished?: boolean;
+  search?: string;
+  page?: number;
+  page_size?: number;
+  ordering?: string;
   
-  // Location-based filters
+  // Property type and categories
+  property_type?: string | string[];
+  amenities?: string | string[] | number[];
+  
+  // Location filters
   university_id?: string;
   distance?: number;
   
-  // Search and ordering
-  search?: string;
-  ordering?: string;
-  
-  // Pagination
-  page?: number;
-  page_size?: number;
-  
-  // Additional filters (you can extend based on your needs)
+  // Price filters
+  price?: string | number;
   min_price?: number;
   max_price?: number;
+  
+  // Property features
+  bedrooms?: number | { min?: number; max?: number };
+  bedrooms__gte?: number;
+  bedrooms__lte?: number;
+  toilets?: number;
+  is_furnished?: boolean;
   is_available?: boolean;
+  is_fenced?: boolean;
+  
+  // Utilities
+  electricity_type?: string | string[];
+  water_supply?: boolean;
+  windows_type?: string;
+  
+  // Size
+  size?: number;
+  size__gte?: number;
+  size__lte?: number;
+  
+  // Allow dynamic keys for any additional filters
+  [key: string]: any;
 }
 
 // Search and filter state management
@@ -224,9 +241,39 @@ export default function useProperty() {
     return Date.now() - timestamp < CACHE_DURATION;
   };
 
-  // Clean old data from primitive filters
+  // Clean and format filters according to backend expectations
   const cleanFilters = (filters: PropertyFilters): PropertyFilters => {
     const cleaned = { ...filters };
+    
+    // Handle array values by joining with commas
+    if (cleaned.amenities && Array.isArray(cleaned.amenities)) {
+      cleaned.amenities = cleaned.amenities.join(',');
+    }
+    
+    if (cleaned.property_type && Array.isArray(cleaned.property_type)) {
+      cleaned.property_type = cleaned.property_type.join(',');
+    }
+    
+    if (cleaned.electricity_type && Array.isArray(cleaned.electricity_type)) {
+      cleaned.electricity_type = cleaned.electricity_type.join(',');
+    }
+    
+    // Handle price range
+    if (cleaned.min_price || cleaned.max_price) {
+      if (cleaned.price) delete cleaned.price; // Remove individual price if range is specified
+    }
+    
+    // Handle bedroom filters
+    if (cleaned.bedrooms && typeof cleaned.bedrooms === 'object') {
+      const bedFilter = cleaned.bedrooms as any;
+      if (bedFilter.min !== undefined) {
+        cleaned.bedrooms__gte = bedFilter.min;
+      }
+      if (bedFilter.max !== undefined) {
+        cleaned.bedrooms__lte = bedFilter.max;
+      }
+      delete cleaned.bedrooms;
+    }
     
     // Remove empty or undefined values
     Object.keys(cleaned).forEach(key => {

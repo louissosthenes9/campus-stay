@@ -66,21 +66,29 @@ export default function PropertySearch({
       max_price: priceRange[1] < 500000 ? priceRange[1] : undefined,
     };
 
+    // Handle property types (can be multiple)
     if (selectedTypes.length > 0) {
-      filters.property_type = selectedTypes[0]; // Use first selected type
+      filters.property_type = selectedTypes;
     }
 
+    // Handle amenities (convert to array of numbers)
     if (selectedAmenities.length > 0) {
-      // Join amenities with comma if multiple
-      filters.amenities = selectedAmenities.join(',');
+      filters.amenities = selectedAmenities.map(Number).filter(Boolean);
     }
 
+    // Handle bedroom range
     if (bedrooms !== null) {
+      // If using a single value for exact match
       filters.bedrooms = bedrooms;
+      
+      // Or for range, you can use:
+      // filters.bedrooms__gte = bedrooms.min;
+      // filters.bedrooms__lte = bedrooms.max;
     }
 
+    // Handle bathrooms (toilets in the API)
     if (bathrooms !== null) {
-      filters.toilets = bathrooms; // Make sure this matches your API
+      filters.toilets = bathrooms;
     }
 
     try {

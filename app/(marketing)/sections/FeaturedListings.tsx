@@ -1,12 +1,12 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { ArrowRight, Star } from 'lucide-react';
-import { fadeIn, scaleIn, staggerContainer } from '@/utils/motion';
+import { ArrowRight } from 'lucide-react';
+import { fadeIn, staggerContainer } from '@/utils/motion';
 import useProperty from '@/hooks/use-property'; 
-import { Property } from '@/types/properties'; 
+import { Property } from '@/types/properties';
+import PropertyCard from '@/components/property/PropertyCard';
 
 type FeaturedListingsProps = {
   properties?: Property[];
@@ -33,31 +33,13 @@ export default function FeaturedListings(
   // Get top-rated properties from marketing categories
   const topRatedProperties = marketingCategories?.popular || [];
 
-  // Helper function to format price
-  const formatPrice = (price: number): string => {
-    return price.toLocaleString();
-  };
-
-  // Helper function to get property image
-  const getPropertyImage = (property: Property): string => {
-    return property.primary_image || '/placeholder-image.jpg'; 
-  };
-
- 
-  const getPropertyRating = (property: Property): number => {
-    return property.properties.rating || 4.5;
-  };
-
-  // Helper function to get review count (you may need to adjust based on your property structure)
-  const getReviewCount = (property: Property): number => {
-    return property.properties.review_count || 0;
-  };
-
-  // Helper function to get photo count (you may need to adjust based on your property structure)
-  const getPhotoCount = (property: Property): number => {
-   
-    return property.images?.length || 1;
-  };
+  // Filter properties by selected region if not 'All Regions'
+  const filteredProperties = selectedRegion === 'All Regions' 
+    ? topRatedProperties 
+    : topRatedProperties.filter(property => 
+        property.properties?.address?.toLowerCase().includes(selectedRegion.toLowerCase()) ||
+        property.properties?.city?.toLowerCase() === selectedRegion.toLowerCase()
+      );
 
   if (marketingLoading) {
     return (
@@ -128,58 +110,31 @@ export default function FeaturedListings(
         </motion.div>
         
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           variants={staggerContainer}
           initial="initial"
           whileInView="whileInView"
         >
-          {topRatedProperties.length > 0 ? (
-            topRatedProperties.slice(0, 6).map((property, index) => (
+          {filteredProperties.length > 0 ? (
+            filteredProperties.slice(0, 6).map((property) => (
               <motion.div
                 key={property.id}
-                variants={scaleIn}
-                className="bg-card rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300"
+                variants={fadeIn}
+                className="h-full"
               >
-                <div className="relative">
-                  <Image
-                    src={getPropertyImage(property)}
-                    width={400}
-                    height={250}
-                    alt={property.properties.title}
-                    className="w-full h-48 object-cover transform hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-2 py-1 rounded text-xs">
-                    {getPhotoCount(property)} photos
-                  </div>
-                </div>
-                <div className="p-6">
-                  <h3 className="font-semibold text-lg mb-2">{property.properties.title}</h3>
-                  <p className="text-sm text-muted-foreground mb-3">{property.properties.address}</p>
-                  <div className="flex items-center mb-4">
-                    <Star className="h-4 w-4 text-yellow-400" fill="currentColor" />
-                    <span className="text-sm ml-1">{getPropertyRating(property)}</span>
-                    <span className="text-xs text-muted-foreground ml-1">
-                      ({getReviewCount(property)} reviews)
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <span className="text-muted-foreground text-xs">From</span>
-                      <p className="font-bold">
-                        TZS {formatPrice(property.properties.price)} 
-                        <span className="text-muted-foreground font-normal text-xs"> / month</span>
-                      </p>
-                    </div>
-                    <Button size="sm" className="btn-primary">
-                      View Details
-                    </Button>
-                  </div>
-                </div>
+                <PropertyCard 
+                  property={property} 
+                  className="h-full"
+                />
               </motion.div>
             ))
           ) : (
             <div className="col-span-full text-center py-12">
-              <p className="text-muted-foreground text-lg">No top-rated properties available at the moment.</p>
+              <p className="text-muted-foreground text-lg">
+                {selectedRegion === 'All Regions' 
+                  ? 'No top-rated properties available at the moment.'
+                  : `No properties found in ${selectedRegion}. Try another region.`}
+              </p>
               <Button 
                 onClick={fetchMarketingCategories} 
                 className="mt-4"
