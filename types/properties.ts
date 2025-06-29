@@ -37,6 +37,7 @@ export interface Property {
     distance_to_university?: number;
     created_at: string;
     updated_at: string;
+    videos: string[];
   };
   images: string[];
   videos: string[];
@@ -98,4 +99,10 @@ export interface PropertyFormData {
   images?: File[];
   videos?: File[]; 
   amenity_ids: number[];
+}
+
+export interface PropertyImage {
+  url: string;
+  id?: string;
+  [key: string]: any;
 }

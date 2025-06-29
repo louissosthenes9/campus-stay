@@ -7,7 +7,16 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { fadeIn, scaleIn, staggerContainer } from '@/utils/motion';
-export default function HeroSection() {
+import { Property } from '@/types/properties';
+import useProperty from '@/hooks/use-property';
+import PropertySearch from '@/components/property/PropertySearch';
+import { useRouter } from 'next/navigation';
+
+export default function HeroSection({ properties }: { properties: Property[] }) {
+  const router = useRouter();
+  const handleSearchResults = (results: Property[]) => {
+    // This will be handled by the search results page
+  };
   return (
      <section id="home" className="py-16 md:py-24 bg-gradient-to-b from-card to-muted">
               <div className="container mx-auto px-16">
@@ -20,17 +29,12 @@ export default function HeroSection() {
                       Join thousands of students who found their ideal accommodation with CampusStay. Verified listings,
                       secure booking, and a stress-free housing experience.
                     </p>
-                    <div className="bg-card rounded-full shadow-lg flex items-center p-2 mb-8 border border-border">
-                      <Search className="mx-3 text-muted-foreground" />
-                      <Input
-                        type="text"
-                        placeholder="Search by city, university or property"
-                        className="border-0 focus:ring-0 bg-transparent"
-                      />
-                      <Button size="sm" className="btn-primary rounded-full">
-                        <Search className="h-5 w-5" />
-                      </Button>
-                    </div>
+                    
+                    <PropertySearch 
+                      className="mt-8"
+                      onSearchResults={handleSearchResults}
+                    />
+     
                     <motion.div
                       className="grid grid-cols-2 md:grid-cols-4 gap-6"
                       variants={staggerContainer}
@@ -38,10 +42,10 @@ export default function HeroSection() {
                       whileInView="whileInView"
                     >
                       {[
-                        { value: '10+ years', label: 'Experience' },
-                        { value: '20+', label: 'Cities' },
-                        { value: '1000+', label: 'Properties' },
-                        { value: '400+', label: 'Brokers' },
+                        { value: '10+', label: 'Universities' },
+                        { value: '6', label: ' Major Cities' },
+                        { value: '100+', label: 'Properties' },
+                        // { value: '400+', label: '' },
                       ].map((stat, index) => (
                         <motion.div key={index} variants={fadeIn} className="text-center">
                           <p className="text-primary font-bold text-xl">{stat.value}</p>

@@ -2,18 +2,32 @@
 import { Button } from '@/components/ui/button';
 import { Plus, Home, MapPin, Loader2, Edit, Trash2, Camera, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, MouseEvent, KeyboardEvent } from 'react';
+import { useEffect, useState, FC } from 'react';
+import useProperty from '@/hooks/use-property';
+import { PropertyImage } from '@/types/properties';
+import PropertyImageCarousel from '@/components/property/PropertyImageCarousel';
 
-interface PropertyImage {
+// Media types
+type MediaType = 'image' | 'video';
+
+// Base media interface
+interface MediaItem {
   url: string;
   id?: string;
+  type?: MediaType;
+  thumbnail?: string;
   [key: string]: any;
 }
 
+// Property media extends the base MediaItem with property-specific fields
+type PropertyMedia = MediaItem;
+
+// Property interface
 interface Property {
   id: string | number;
   properties: {
-    media?: PropertyImage[];
+    media?: PropertyMedia[];
+    videos?: (string | PropertyMedia)[];
     property_type?: string;
     property_type_display?: string;
     bedrooms?: number;
@@ -26,160 +40,42 @@ interface Property {
   [key: string]: any;
 }
 
-interface PropertyImageCarouselProps {
-  images: (PropertyImage | string)[];
-  title: string;
-  propertyType: string;
-  available: boolean;
-  onImageClick: (images: (PropertyImage | string)[], index: number) => void;
-}
+// Extend the properties type to include videos
+type PropertyWithVideos = Property & {
+  properties: Property['properties'] & {
+    videos?: (string | PropertyMedia)[];
+  };
+};
 
+// Image modal props
 interface ImageModalProps {
-  images: (PropertyImage | string)[];
+  images: MediaItem[];
+  videos?: MediaItem[];
   initialIndex: number;
   isOpen: boolean;
   onClose: () => void;
 }
 
+// Pagination interface
 interface Pagination {
   next: string | null;
   previous: string | null;
   count: number;
 }
-import useProperty from '@/hooks/use-property';
 
-// Property Image Carousel Component
-const PropertyImageCarousel = ({ 
-  images, 
-  title, 
-  propertyType, 
-  available, 
-  onImageClick 
-}: PropertyImageCarouselProps) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
+const ImageModal: React.FC<ImageModalProps> = ({
+  images,
+  videos = [],
+  initialIndex,
+  isOpen,
+  onClose,
+}) => {
+  const [currentIndex, setCurrentIndex] = useState<number>(initialIndex);
+  const [mediaType, setMediaType] = useState<MediaType>('image');
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
 
-  if (!images || images.length === 0) {
-    return (
-      <div className="relative h-48 overflow-hidden bg-gray-200 flex items-center justify-center">
-        <Camera className="w-12 h-12 text-gray-400" />
-        <div className="absolute top-2 right-2 bg-indigo-600 text-white text-xs font-bold px-2 py-1 rounded-md">
-          {propertyType}
-        </div>
-        {!available && (
-          <div className="absolute top-2 left-2 bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded-md">
-            Unavailable
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  const nextImage = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCurrentIndex((prev) => (prev + 1) % images.length);
-  };
-
-  const prevImage = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
-
-  const goToImage = (index: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCurrentIndex(index);
-  };
-
-  return (
-    <div 
-      className="relative h-48 overflow-hidden cursor-pointer group"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onClick={() => onImageClick && onImageClick(images, currentIndex)}
-    >
-      {/* Main Image */}
-      <div 
-        className="flex transition-transform duration-300 ease-in-out h-full"
-        style={{ transform: `translateX(-${currentIndex * 100}%)` }}
-      >
-        {images.map((image, index) => (
-          <img
-            key={index}
-            src={typeof image === 'string' ? image : image.url}
-            alt={`${title} - Image ${index + 1}`}
-            className="w-full h-full object-cover flex-shrink-0"
-          />
-        ))}
-      </div>
-
-      {/* Navigation Arrows */}
-      {images.length > 1 && (
-        <>
-          <button
-            onClick={prevImage}
-            className={`absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-1.5 shadow-md transition-all duration-200 ${
-              isHovered ? 'opacity-100' : 'opacity-0'
-            }`}
-          >
-            <ChevronLeft className="w-4 h-4 text-gray-700" />
-          </button>
-          <button
-            onClick={nextImage}
-            className={`absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-1.5 shadow-md transition-all duration-200 ${
-              isHovered ? 'opacity-100' : 'opacity-0'
-            }`}
-          >
-            <ChevronRight className="w-4 h-4 text-gray-700" />
-          </button>
-        </>
-      )}
-
-      {/* Image Dots */}
-      {images.length > 1 && (
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex space-x-1">
-          {images.map((_, index) => (
-            <button
-              key={index}
-              onClick={(e) => goToImage(index, e)}
-              className={`w-2 h-2 rounded-full transition-all duration-200 ${
-                index === currentIndex 
-                  ? 'bg-white' 
-                  : 'bg-white/50 hover:bg-white/75'
-              }`}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Property Type Badge */}
-      <div className="absolute top-2 right-2 bg-indigo-600 text-white text-xs font-bold px-2 py-1 rounded-md">
-        {propertyType}
-      </div>
-
-      {/* Availability Badge */}
-      {!available && (
-        <div className="absolute top-2 left-2 bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded-md">
-          Unavailable
-        </div>
-      )}
-
-      {/* Image Count */}
-      <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-md flex items-center">
-        <Camera className="w-3 h-3 mr-1" />
-        {images.length}
-      </div>
-    </div>
-  );
-};
-
-// Image Modal Component
-const ImageModal = ({ 
-  images, 
-  initialIndex, 
-  isOpen, 
-  onClose 
-}: ImageModalProps) => {
-  const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  const mediaItems = mediaType === 'image' ? [...images] : [...videos];
+  const hasVideos = videos.length > 0;
 
   useEffect(() => {
     setCurrentIndex(initialIndex);
@@ -188,8 +84,14 @@ const ImageModal = ({
   useEffect(() => {
     const handleKeyDown = (e: globalThis.KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
-      if (e.key === 'ArrowLeft') setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
-      if (e.key === 'ArrowRight') setCurrentIndex((prev) => (prev + 1) % images.length);
+      if (mediaItems.length === 0) return;
+
+      if (e.key === 'ArrowLeft') {
+        setCurrentIndex((prev) => (prev - 1 + mediaItems.length) % mediaItems.length);
+      }
+      if (e.key === 'ArrowRight') {
+        setCurrentIndex(prev => (prev + 1) % mediaItems.length);
+      }
     };
 
     if (isOpen) {
@@ -201,7 +103,57 @@ const ImageModal = ({
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, images.length, onClose]);
+  }, [isOpen, mediaItems.length, onClose]);
+
+  const toggleMediaType = () => {
+    if (!hasVideos) return;
+    const newType = mediaType === 'image' ? 'video' : 'image';
+    setMediaType(newType);
+    setCurrentIndex(0);
+    setIsPlaying(false);
+  };
+
+  const renderMedia = () => {
+    if (mediaItems.length === 0) {
+      const mediaTypeText = mediaType === 'image' ? 'images' : 'videos';
+      return (
+        <div className="w-full h-full flex items-center justify-center bg-gray-100">
+          <p className="text-gray-500">No {mediaTypeText} available</p>
+        </div>
+      );
+    }
+
+    const currentItem = mediaItems[currentIndex];
+    const url = typeof currentItem === 'string' ? currentItem : currentItem.url;
+    
+    if (mediaType === 'video') {
+      return (
+        <div className="relative w-full h-full flex items-center justify-center">
+          <video
+            key={url}
+            className="max-w-full max-h-full object-contain"
+            controls
+            autoPlay={isPlaying}
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <source src={url} type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+        </div>
+      );
+    }
+    
+    return (
+      <img
+        src={url}
+        alt={`Media ${currentIndex + 1}`}
+        className="max-w-full max-h-full object-contain"
+        onClick={(e) => e.stopPropagation()}
+      />
+    );
+  };
 
   if (!isOpen) return null;
 
@@ -217,13 +169,30 @@ const ImageModal = ({
           </svg>
         </button>
 
-        <img
-          src={typeof images[currentIndex] === 'string' ? images[currentIndex] as string : (images[currentIndex] as PropertyImage).url}
-          alt={`Property image ${currentIndex + 1}`}
-          className="max-w-full max-h-full object-contain"
-        />
+        {renderMedia()}
+        
+        {hasVideos && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleMediaType();
+            }}
+            className="absolute top-4 left-4 z-10 bg-black/70 hover:bg-black/90 text-white rounded-full p-2 transition-all"
+            title={`Switch to ${mediaType === 'image' ? 'videos' : 'images'}`}
+          >
+            {mediaType === 'image' ? (
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            )}
+          </button>
+        )}
 
-        {images.length > 1 && (
+        {mediaItems.length > 1 && (
           <>
             <button
               onClick={() => setCurrentIndex((prev: number) => (prev - 1 + images.length) % images.length)}
@@ -266,9 +235,11 @@ export default function PropertyPage() {
   } = useProperty();
 
   const [deletingId, setDeletingId] = useState<string | number | null>(null);
+  const [activeTab, setActiveTab] = useState<'photos' | 'videos'>('photos');
+  
   const [imageModal, setImageModal] = useState<{
     isOpen: boolean;
-    images: (string | PropertyImage)[];
+    images: MediaItem[];
     initialIndex: number;
   }>({ 
     isOpen: false, 
@@ -310,7 +281,13 @@ export default function PropertyPage() {
 
   // Handle image click to open modal
   const handleImageClick = (images: (string | PropertyImage)[], initialIndex: number) => {
-    setImageModal({ isOpen: true, images, initialIndex });
+    // Convert PropertyImage to MediaItem format if needed
+    const convertedImages: MediaItem[] = images.map(img => 
+      typeof img === 'string' 
+        ? { url: img, type: 'image' as const }
+        : { url: img.url, id: img.id, type: 'image' as const }
+    );
+    setImageModal({ isOpen: true, images: convertedImages, initialIndex });
   };
 
   // Close image modal
@@ -444,7 +421,7 @@ export default function PropertyPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {properties.map((property) => {
+          {properties.map((property, index) => {
             const price = getPropertyPrice(property);
             const title = getPropertyTitle(property);
             const address = getPropertyAddress(property);
@@ -453,7 +430,7 @@ export default function PropertyPage() {
             
             // Fix: Access media from the correct path
             // Using type assertion for the media property since it's not in the base type
-  const mediaImages = (property.properties as { media?: (string | PropertyImage)[] }).media || [];
+             const mediaImages = (property.properties as { media?: (string | PropertyImage)[] }).media || [];
             const propertyType = property.properties.property_type_display || property.properties.property_type;
 
             return (
@@ -465,13 +442,51 @@ export default function PropertyPage() {
                   !available ? 'ring-2 ring-yellow-200' : ''
                 }`}
               >
-                <PropertyImageCarousel
-                  images={mediaImages}
-                  title={title}
-                  propertyType={propertyType}
-                  available={available}
-                  onImageClick={handleImageClick}
-                />
+                <div className="relative">
+                  <PropertyImageCarousel
+                    images={mediaImages}
+                    videos={property.properties.videos || []}
+                    title={title}
+                    propertyType={propertyType}
+                    available={available}
+                    onImageClick={handleImageClick}
+                    showVideos={activeTab === 'videos'}
+                  />
+                  
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex bg-white/90 rounded-full p-1 shadow-md z-10">
+                    <Button
+                      variant={activeTab === 'photos' ? 'default' : 'ghost'}
+                      size="sm"
+                      className={`rounded-full text-sm font-medium ${
+                        activeTab === 'photos' 
+                          ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200' 
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveTab('photos');
+                      }}
+                    >
+                      Photos
+                    </Button>
+                    <Button
+                      variant={activeTab === 'videos' ? 'default' : 'ghost'}
+                      size="sm"
+                      className={`rounded-full text-sm font-medium ${
+                        activeTab === 'videos' 
+                          ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200' 
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveTab('videos');
+                      }}
+                      disabled={!property.properties.videos?.length}
+                    >
+                      Videos
+                    </Button>
+                  </div>
+                </div>
                 
                 <div className="p-5">
                   <h2 className="text-xl font-semibold text-gray-900 mb-2 line-clamp-1">
@@ -517,7 +532,7 @@ export default function PropertyPage() {
                       variant="outline" 
                       size="sm"
                       className="flex-1 text-indigo-600 border-indigo-600 hover:bg-indigo-50"
-                      onClick={() => router.push(`/dashboard/properties/${property.id}`)}
+                      onClick={() => router.push(`/dashboard/properties/${property.id}/view`)}
                     >
                       View Details
                     </Button>

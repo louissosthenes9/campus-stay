@@ -32,7 +32,7 @@ export default function HomePage() {
       <Header />
       <main>
         {/* Sections for the main content*/}
-        <HeroSection />
+        <HeroSection  properties = {properties}/>
         <FeaturedListings properties = {properties}/>
         <UniversitySection/>
         <BookingProcess />

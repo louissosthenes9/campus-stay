@@ -4,6 +4,8 @@ import {
     MessageSquare,
     Settings,
     LogOut,
+    UserCircle,
+    School2Icon,
   } from "lucide-react";
   
   export const BROKER_SIDEBAR_ITEMS = [
@@ -21,6 +23,16 @@ import {
       label: "Enquiry Management",
       href: "/dashboard/enquiries",
       icon: MessageSquare,
+    },
+    {
+      label: "User Management",
+      href: "/dashboard/users",
+      icon:UserCircle,
+    },
+    {
+      label: "University Management",
+      href: "/dashboard/universities",
+      icon:School2Icon,
     },
   ];
   

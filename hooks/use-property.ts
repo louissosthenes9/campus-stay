@@ -1,5 +1,5 @@
 'use client';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import useApi from './use-api'; 
 import useAuth from './use-auth';
 import { PropertyFormData, Property } from '@/types/properties';
@@ -55,19 +55,47 @@ export interface PaginatedResponse<T> {
   results: T[];
 }
 
-// Filters for property search
+// Enhanced filters for property search with all backend-supported options
 export interface PropertyFilters {
+  // Basic filters
   property_type?: string;
   price?: string;
   bedrooms?: number;
   toilets?: number;
   is_furnished?: boolean;
+  
+  // Location-based filters
   university_id?: string;
   distance?: number;
+  
+  // Search and ordering
   search?: string;
   ordering?: string;
+  
+  // Pagination
   page?: number;
   page_size?: number;
+  
+  // Additional filters (you can extend based on your needs)
+  min_price?: number;
+  max_price?: number;
+  is_available?: boolean;
+}
+
+// Search and filter state management
+export interface SearchState {
+  query: string;
+  filters: PropertyFilters;
+  activeFilters: string[];
+  isSearching: boolean;
+  searchHistory: string[];
+}
+
+// Sorting options
+export interface SortOption {
+  value: string;
+  label: string;
+  direction: 'asc' | 'desc';
 }
 
 // API response structure
@@ -110,7 +138,30 @@ export default function useProperty() {
   const [marketingLoading, setMarketingLoading] = useState<boolean>(false);
   const [marketingError, setMarketingError] = useState<string | null>(null);
   
+  // Search and filter state
+  const [searchState, setSearchState] = useState<SearchState>({
+    query: '',
+    filters: {},
+    activeFilters: [],
+    isSearching: false,
+    searchHistory: []
+  });
+  
+  // Cached results for performance
+  const [cachedResults, setCachedResults] = useState<Map<string, { data: Property[], timestamp: number }>>(new Map());
+  
   const API_ENDPOINT = '/properties/';
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+  
+  // Predefined sort options
+  const sortOptions: SortOption[] = useMemo(() => [
+    { value: 'created_at', label: 'Newest First', direction: 'desc' },
+    { value: '-created_at', label: 'Oldest First', direction: 'asc' },
+    { value: 'price', label: 'Price: Low to High', direction: 'asc' },
+    { value: '-price', label: 'Price: High to Low', direction: 'desc' },
+    { value: 'title', label: 'Name: A to Z', direction: 'asc' },
+    { value: '-title', label: 'Name: Z to A', direction: 'desc' }
+  ], []);
   
   // Helper function to transform backend response to simplified structure
   const transformBackendResponse = (backendResponse: BackendPropertyResponse): PaginatedResponse<Property> => {
@@ -163,6 +214,94 @@ export default function useProperty() {
     return apiData;
   };
 
+  // Generate cache key for results
+  const generateCacheKey = (filters: PropertyFilters): string => {
+    return JSON.stringify(filters);
+  };
+
+  // Check if cached result is still valid
+  const isCacheValid = (timestamp: number): boolean => {
+    return Date.now() - timestamp < CACHE_DURATION;
+  };
+
+  // Clean old data from primitive filters
+  const cleanFilters = (filters: PropertyFilters): PropertyFilters => {
+    const cleaned = { ...filters };
+    
+    // Remove empty or undefined values
+    Object.keys(cleaned).forEach(key => {
+      const value = cleaned[key as keyof PropertyFilters];
+      if (value === undefined || value === null || value === '') {
+        delete cleaned[key as keyof PropertyFilters];
+      }
+    });
+    
+    return cleaned;
+  };
+
+  // Update search state
+  const updateSearchState = useCallback((updates: Partial<SearchState>) => {
+    setSearchState(prev => ({ ...prev, ...updates }));
+  }, []);
+
+  // Set search query
+  const setSearchQuery = useCallback((query: string) => {
+    updateSearchState({ 
+      query,
+      isSearching: query.length > 0
+    });
+    
+    // Add to search history if not empty and not already in history
+    if (query && !searchState.searchHistory.includes(query)) {
+      updateSearchState({
+        searchHistory: [query, ...searchState.searchHistory.slice(0, 9)] // Keep last 10 searches
+      });
+    }
+  }, [searchState.searchHistory, updateSearchState]);
+
+  // Update filters
+  const updateFilters = useCallback((newFilters: Partial<PropertyFilters>) => {
+    const updatedFilters = { ...searchState.filters, ...newFilters };
+    const cleanedFilters = cleanFilters(updatedFilters);
+    
+    // Update active filters list
+    const activeFilters = Object.keys(cleanedFilters).filter(key => 
+      key !== 'page' && key !== 'page_size' && key !== 'ordering'
+    );
+    
+    updateSearchState({ 
+      filters: cleanedFilters,
+      activeFilters
+    });
+  }, [searchState.filters, updateSearchState]);
+
+  // Clear all filters
+  const clearFilters = useCallback(() => {
+    updateSearchState({
+      filters: {},
+      activeFilters: [],
+      query: ''
+    });
+  }, [updateSearchState]);
+
+  // Clear specific filter
+  const clearFilter = useCallback((filterKey: keyof PropertyFilters) => {
+    const updatedFilters = { ...searchState.filters };
+    delete updatedFilters[filterKey];
+    
+    const activeFilters = searchState.activeFilters.filter(key => key !== filterKey);
+    
+    updateSearchState({
+      filters: updatedFilters,
+      activeFilters
+    });
+  }, [searchState.filters, searchState.activeFilters, updateSearchState]);
+
+  // Set sorting
+  const setSorting = useCallback((sortValue: string) => {
+    updateFilters({ ordering: sortValue });
+  }, [updateFilters]);
+
   // Fetch marketing categories
   const fetchMarketingCategories = useCallback(async (): Promise<MarketingCategories | null> => {
     setMarketingLoading(true);
@@ -193,16 +332,79 @@ export default function useProperty() {
     }
   }, [performGetRequest, authHeaders]);
 
-  // Fetch properties with filters
-  const fetchProperties = useCallback(async (filters: PropertyFilters = {}): Promise<PaginatedResponse<Property> | null> => {
+  // Enhanced fetch properties with search and filtering
+  const fetchProperties = useCallback(async (
+    customFilters: PropertyFilters = {},
+    useCache: boolean = true
+  ): Promise<PaginatedResponse<Property> | null> => {
     setLoading(true);
     setError(null);
     
+    // Combine current filters with custom filters
+    const combinedFilters = { 
+      ...searchState.filters, 
+      ...customFilters
+    };
+    
+    // Add search query if present
+    if (searchState.query) {
+      combinedFilters.search = searchState.query;
+    }
+    
+    const cleanedFilters = cleanFilters(combinedFilters);
+    const cacheKey = generateCacheKey(cleanedFilters);
+    
+    // Debug log
+    console.log('Fetching properties with filters:', cleanedFilters);
+    
+    // Check cache first
+    if (useCache) {
+      const cachedResult = cachedResults.get(cacheKey);
+      if (cachedResult && isCacheValid(cachedResult.timestamp)) {
+        const cachedResponse: PaginatedResponse<Property> = {
+          count: cachedResult.data.length,
+          next: null,
+          previous: null,
+          results: cachedResult.data
+        };
+        setProperties(cachedResponse.results);
+        setPagination({
+          count: cachedResponse.count,
+          next: cachedResponse.next,
+          previous: cachedResponse.previous,
+        });
+        setLoading(false);
+        return cachedResponse;
+      }
+    }
+    
     try {
-      const response = await performGetRequest<BackendPropertyResponse>(API_ENDPOINT, filters, authHeaders());
+      console.log('Making API request to:', API_ENDPOINT);
+      console.log('With filters:', cleanedFilters);
+      
+      const response = await performGetRequest<BackendPropertyResponse>(
+        API_ENDPOINT, 
+        cleanedFilters, 
+        authHeaders()
+      );
+      
+      console.log('API Response:', response);
       
       if (response.success) {
         const transformedData = transformBackendResponse(response.data);
+        
+        // Cache the results
+        if (useCache) {
+          setCachedResults(prev => new Map(prev).set(cacheKey, {
+            data: transformedData.results,
+            timestamp: Date.now()
+          }));
+        }
+        console.log('Transformed Data:', transformedData);
+        console.log('Transformed Data Results:', transformedData.results);
+        console.log('Transformed Data Count:', transformedData.count);
+        console.log('Transformed Data Next:', transformedData.next);
+        console.log('Transformed Data Previous:', transformedData.previous);
         setProperties(transformedData.results);
         setPagination({
           count: transformedData.count,
@@ -211,20 +413,54 @@ export default function useProperty() {
         });
         return transformedData;
       } else {
-        setError(response.error || 'Failed to fetch properties');
+        const errorMsg = response.error || 'Failed to fetch properties';
+        console.error('API Error:', errorMsg);
+        setError(errorMsg);
         setProperties([]);
         setPagination(null);
         return null;
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred while fetching properties');
+      const errorMsg = err.message || 'An error occurred while fetching properties';
+      console.error('Fetch Error:', errorMsg, err);
+      setError(errorMsg);
       setProperties([]);
       setPagination(null);
       return null;
     } finally {
       setLoading(false);
     }
-  }, [performGetRequest, authHeaders]);
+  }, [searchState.filters, searchState.query, cachedResults, performGetRequest, authHeaders]);
+
+  // Search properties with debouncing
+  const searchProperties = useCallback(async (
+    query: string,
+    filters: PropertyFilters = {}
+  ): Promise<PaginatedResponse<Property> | null> => {
+    setSearchQuery(query);
+    return fetchProperties({ ...filters, search: query }, false);
+  }, [fetchProperties, setSearchQuery]);
+
+  // Fetch properties by page
+  const fetchPropertiesPage = useCallback(async (page: number): Promise<PaginatedResponse<Property> | null> => {
+    return fetchProperties({ page });
+  }, [fetchProperties]);
+
+  // Fetch next page
+  const fetchNextPage = useCallback(async (): Promise<PaginatedResponse<Property> | null> => {
+    if (!pagination?.next) return null;
+    
+    const currentPage = searchState.filters.page || 1;
+    return fetchPropertiesPage(currentPage + 1);
+  }, [pagination, searchState.filters.page, fetchPropertiesPage]);
+
+  // Fetch previous page
+  const fetchPreviousPage = useCallback(async (): Promise<PaginatedResponse<Property> | null> => {
+    if (!pagination?.previous) return null;
+    
+    const currentPage = searchState.filters.page || 1;
+    return fetchPropertiesPage(Math.max(1, currentPage - 1));
+  }, [pagination, searchState.filters.page, fetchPropertiesPage]);
 
   // Fetch single property by ID
   const fetchPropertyById = useCallback(async (id: string | number): Promise<Property | null> => {
@@ -297,6 +533,8 @@ export default function useProperty() {
       );
       
       if (response.success) {
+        // Clear cache after creating new property
+        setCachedResults(new Map());
         return response.data;
       } else {
         setError(response.error || 'Failed to create property');
@@ -361,6 +599,8 @@ export default function useProperty() {
       
       if (response.success) {
         setProperty(prev => (prev && prev.id === Number(id) ? response.data : prev));
+        // Clear cache after updating property
+        setCachedResults(new Map());
         return response.data;
       } else {
         setError(response.error || `Failed to update property ${id}`);
@@ -393,6 +633,8 @@ export default function useProperty() {
       
       if (response.success) {
         setProperty(prev => (prev && prev.id === Number(id) ? response.data : prev));
+        // Clear cache after updating property
+        setCachedResults(new Map());
         return response.data;
       } else {
         setError(response.error || `Failed to patch property ${id}`);
@@ -492,6 +734,8 @@ export default function useProperty() {
         // Remove from local state
         setProperties(prev => prev.filter(p => p.id !== Number(id)));
         setProperty(prev => prev && prev.id === Number(id) ? null : prev);
+        // Clear cache after deleting property
+        setCachedResults(new Map());
         return true;
       } else {
         setError(response.error || `Failed to delete property ${id}`);
@@ -574,18 +818,57 @@ export default function useProperty() {
     setMarketingError(null);
   }, []);
 
+  // Clear cache
+  const clearCache = useCallback(() => {
+    setCachedResults(new Map());
+  }, []);
+
   // Reset state
   const resetState = useCallback(() => {
     setProperties([]);
     setProperty(null);
     setError(null);
     setPagination(null);
+    setCachedResults(new Map());
   }, []);
 
   const resetMarketingState = useCallback(() => {
     setMarketingCategories(null);
     setMarketingError(null);
   }, []);
+
+  const resetSearchState = useCallback(() => {
+    setSearchState({
+      query: '',
+      filters: {},
+      activeFilters: [],
+      isSearching: false,
+      searchHistory: []
+    });
+  }, []);
+
+  // Computed values
+  const hasActiveFilters = useMemo(() => {
+    return searchState.activeFilters.length > 0 || searchState.query.length > 0;
+  }, [searchState.activeFilters, searchState.query]);
+
+  const canFetchNextPage = useMemo(() => {
+    return pagination?.next !== null;
+  }, [pagination]);
+
+  const canFetchPreviousPage = useMemo(() => {
+    return pagination?.previous !== null;
+  }, [pagination]);
+
+  const currentPage = useMemo(() => {
+    return searchState.filters.page || 1;
+  }, [searchState.filters.page]);
+
+  const totalPages = useMemo(() => {
+    if (!pagination?.count) return 0;
+    const pageSize = searchState.filters.page_size || 20;
+    return Math.ceil(pagination.count / pageSize);
+  }, [pagination?.count, searchState.filters.page_size]);
 
   return {
     // State
@@ -600,6 +883,15 @@ export default function useProperty() {
     marketingLoading,
     marketingError,
     
+    // Search and filter state
+    searchState,
+    hasActiveFilters,
+    canFetchNextPage,
+    canFetchPreviousPage,
+    currentPage,
+    totalPages,
+    sortOptions,
+    
     // CRUD operations
     fetchProperties,
     fetchPropertyById,
@@ -607,6 +899,19 @@ export default function useProperty() {
     updateProperty,
     patchProperty,
     deleteProperty,
+    
+    // Search and filtering
+    searchProperties,
+    setSearchQuery,
+    updateFilters,
+    clearFilters,
+    clearFilter,
+    setSorting,
+    
+    // Pagination
+    fetchPropertiesPage,
+    fetchNextPage,
+    fetchPreviousPage,
     
     // Media operations
     addMedia,
@@ -627,7 +932,9 @@ export default function useProperty() {
     // Utility functions
     clearError,
     clearMarketingError,
+    clearCache,
     resetState,
     resetMarketingState,
+    resetSearchState,
   };
 }
