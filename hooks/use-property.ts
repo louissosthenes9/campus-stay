@@ -196,7 +196,7 @@ export default function useProperty() {
     } finally {
       setMarketingLoading(false);
     }
-  }, [performGetRequest]);
+  }, []);
 
   // Enhanced fetch properties with search and filtering
   const fetchProperties = useCallback(async (
@@ -347,7 +347,7 @@ export default function useProperty() {
     } finally {
       setLoading(false);
     }
-  }, [performGetRequest]);
+  }, []);
 
   // Create new property
   const createProperty = useCallback(async (propertyData: PropertyFormData): Promise<Property | null> => {
@@ -408,7 +408,7 @@ export default function useProperty() {
     } finally {
       setLoading(false);
     }
-  }, [performPostRequest]);
+  }, []);
 
   // Update existing property
   const updateProperty = useCallback(async (
@@ -474,7 +474,7 @@ export default function useProperty() {
     } finally {
       setLoading(false);
     }
-  }, [performPutRequest]);
+  }, []);
 
   // Partial update of property
   const patchProperty = useCallback(async (
@@ -508,7 +508,7 @@ export default function useProperty() {
     } finally {
       setLoading(false);
     }
-  }, [performPatchRequest, authHeaders]);
+  }, []);
 
   // Add media to existing property
   const addMedia = useCallback(async (
@@ -553,7 +553,7 @@ export default function useProperty() {
     } finally {
       setLoading(false);
     }
-  }, [performPostRequest, authHeaders]);
+  }, []);
 
   // Remove media from property
   const removeMedia = useCallback(async (
@@ -582,7 +582,7 @@ export default function useProperty() {
     } finally {
       setLoading(false);
     }
-  }, [performDeleteRequest]);
+  }, []);
 
   // Delete property
   const deleteProperty = useCallback(async (id: string | number): Promise<boolean> => {
@@ -609,7 +609,7 @@ export default function useProperty() {
     } finally {
       setLoading(false);
     }
-  }, [performDeleteRequest, authHeaders]);
+  }, []);
 
   // Fetch properties near university (for students)
   const fetchPropertiesNearUniversity = useCallback(async (distance?: number): Promise<Property[] | null> => {

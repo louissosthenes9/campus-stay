@@ -171,7 +171,7 @@ export default function useFavourite(): UseFavouriteReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id, performRequest, authHeaders]);
+  }, [user?.id]);
 
   // Fetch top favorited properties
   const fetchTopFavoritedProperties = useCallback(async () => {
@@ -204,7 +204,7 @@ export default function useFavourite(): UseFavouriteReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [performRequest, authHeaders]);
+  }, []);
 
   // Add property to favorites
   const addFavorite = useCallback(async (propertyId: number): Promise<boolean> => {
@@ -249,7 +249,7 @@ export default function useFavourite(): UseFavouriteReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id, isFavorite, performRequest, authHeaders]);
+  }, [user?.id, isFavorite]);
 
   // Remove property from favorites
   const removeFavorite = useCallback(async (propertyId: number): Promise<boolean> => {
@@ -300,7 +300,7 @@ export default function useFavourite(): UseFavouriteReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id, isFavorite, favorites, pagination, performRequest, authHeaders]);
+  }, [user?.id, isFavorite, favorites, pagination]);
 
   // Toggle favorite status
   const toggleFavorite = useCallback(async (propertyId: number): Promise<boolean> => {
@@ -322,7 +322,7 @@ export default function useFavourite(): UseFavouriteReturn {
       setPagination(null);
       setHasFetchedInitially(false);
     }
-  }, [user?.id, hasFetchedInitially, fetchFavorites]);
+  }, [user?.id, hasFetchedInitially]);
 
   return {
     favorites,
