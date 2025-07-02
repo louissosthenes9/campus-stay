@@ -2,6 +2,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import useApi from './use-api';
 import useAuth from './use-auth';
+import { ApiHook } from '@/types/properties';
 
 // Enquiry status enum
 export enum EnquiryStatus {
@@ -66,7 +67,6 @@ export interface Enquiry {
 // Form data interfaces
 export interface CreateEnquiryData {
   property_id: number;
-  subject: string;
   message: string;
 }
 
@@ -114,22 +114,7 @@ export interface SortOption {
   direction: 'asc' | 'desc';
 }
 
-// API response structure
-interface ApiResponse<T = any> {
-  data: T;
-  status: number;
-  success: boolean;
-  error?: string;
-}
 
-// API hook interface
-interface ApiHook {
-  performGetRequest: <T>(endpoint: string, params?: object, headers?: object) => Promise<ApiResponse<T>>;
-  performPostRequest: <T>(endpoint: string, data: any, headers?: object, contentType?: string) => Promise<ApiResponse<T>>;
-  performPutRequest: <T>(endpoint: string, data: any, headers?: object) => Promise<ApiResponse<T>>;
-  performPatchRequest: <T>(endpoint: string, data: any, headers?: object) => Promise<ApiResponse<T>>;
-  performDeleteRequest: <T>(endpoint: string, data?: object, headers?: object) => Promise<ApiResponse<T>>;
-}
 
 export default function useEnquiry() {
   const {
