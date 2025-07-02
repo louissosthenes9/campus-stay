@@ -14,7 +14,7 @@ type FeaturedListingsProps = {
 }
 
 export default function FeaturedListings(
-  { properties, favourites }: FeaturedListingsProps
+  { favourites }: FeaturedListingsProps
 ) {
   const { 
     marketingCategories, 

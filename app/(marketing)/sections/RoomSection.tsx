@@ -2,30 +2,11 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import { Clock, Shield, ArrowRight, Star, MapPin, Bed, Bath, Wifi, Car, Heart } from 'lucide-react';
+import { Clock, Shield, ArrowRight } from 'lucide-react';
 import { fadeIn, scaleIn, staggerContainer } from '@/utils/motion';
-import useProperty from '@/hooks/use-property';
-import { Property } from '@/types/properties';
-import PropertyCard from '@/components/property/PropertyCard';
 
 export default function RoomSection() {
-  const { 
-    marketingCategories, 
-    marketingLoading, 
-    marketingError, 
-    fetchMarketingCategories 
-  } = useProperty();
-  
-  const [activeTab, setActiveTab] = useState<'affordable' | 'top-rated'>('affordable');
-
-  useEffect(() => {
-    fetchMarketingCategories();
-  }, []);
-
-  const affordableProperties = marketingCategories?.cheap || [];
-  const topRatedProperties = marketingCategories?.top_rated || [];
-  
-  const displayProperties = activeTab === 'affordable' ? affordableProperties : topRatedProperties;
+ 
 
   return (
     <section className="py-20 bg-gradient-to-br from-gray-50 via-white to-blue-50 relative overflow-hidden">
@@ -135,99 +116,6 @@ export default function RoomSection() {
               <p className="text-gray-600 leading-relaxed">{feature.description}</p>
             </motion.div>
           ))}
-        </motion.div>
-
-        {/* Properties Section */}
-        <motion.div
-          variants={fadeIn}
-          initial="initial"
-          whileInView="whileInView"
-          viewport={{ once: true }}
-          className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100"
-        >
-          {/* Tab Navigation */}
-          <div className="flex flex-col sm:flex-row items-center justify-between mb-10">
-            <h3 className="text-3xl font-bold text-gray-800 mb-4 sm:mb-0">
-              Featured <span className="text-primary">Properties</span>
-            </h3>
-            
-            <div className="flex bg-gray-100 rounded-2xl p-1">
-              <button
-                onClick={() => setActiveTab('affordable')}
-                className={`px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
-                  activeTab === 'affordable'
-                    ? 'bg-white text-primary shadow-md transform scale-105'
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                Affordable Rooms
-              </button>
-              <button
-                onClick={() => setActiveTab('top-rated')}
-                className={`px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
-                  activeTab === 'top-rated'
-                    ? 'bg-white text-primary shadow-md transform scale-105'
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                Top Rated
-              </button>
-            </div>
-          </div>
-
-          {/* Loading State */}
-          {marketingLoading && (
-            <div className="flex items-center justify-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            </div>
-          )}
-
-          {/* Error State */}
-          {marketingError && (
-            <div className="text-center py-20">
-              <div className="text-red-500 mb-4">⚠️ {marketingError}</div>
-              <button 
-                onClick={() => fetchMarketingCategories()}
-                className="px-6 py-3 bg-primary text-white rounded-xl hover:bg-blue-600 transition-colors"
-              >
-                Try Again
-              </button>
-            </div>
-          )}
-
-          {/* Properties Grid */}
-          {!marketingLoading && !marketingError && (
-            <motion.div 
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-              key={activeTab} // This ensures re-animation when tab changes
-            >
-              {displayProperties.slice(0, 6).map((property, index) => (
-                <PropertyCard key={property.id} property={property}/>
-              ))}
-            </motion.div>
-          )}
-
-          {/* No Properties Message */}
-          {!marketingLoading && !marketingError && displayProperties.length === 0 && (
-            <div className="text-center py-20">
-              <div className="text-gray-500 mb-4">No properties available in this category</div>
-            </div>
-          )}
-
-          {/* View All Button */}
-          {!marketingLoading && !marketingError && displayProperties.length > 0 && (
-            <motion.div 
-              className="text-center mt-12"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-            >
-              <button className="bg-gradient-to-r from-primary to-blue-600 text-white px-8 py-4 rounded-2xl font-medium hover:from-blue-600 hover:to-primary transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
-                View All {activeTab === 'affordable' ? 'Affordable' : 'Top Rated'} Properties
-                <ArrowRight className="inline-block ml-2 w-5 h-5" />
-              </button>
-            </motion.div>
-          )}
         </motion.div>
       </div>
     </section>
