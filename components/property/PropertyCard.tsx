@@ -343,7 +343,15 @@ function PropertyCard({
             </div>
             <div className="mt-3 mb-4">
               <p className="font-bold text-lg">
-                TZS {propertyData.price?.toLocaleString() || 'N/A'}
+                TZS {propertyData.price?.toLocaleString(
+                  'en-GB',
+                  {
+                    style: 'currency',
+                    currency: 'TZS',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                  },
+                )?.replace(/\B(?=(\d{3})+(?!\d))/g, ',') || 'N/A'}
                 <span className="text-muted-foreground font-normal text-sm ml-1">/ month</span>
               </p>
             </div>

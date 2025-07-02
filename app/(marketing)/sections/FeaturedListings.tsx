@@ -23,16 +23,13 @@ export default function FeaturedListings(
     fetchMarketingCategories 
   } = useProperty();
   
-  const [selectedRegion, setSelectedRegion] = useState('All Regions');
-  const regions = ['All Regions', 'Dar es Salaam', 'Morogoro', 'Dodoma', 'Arusha', 'Mwanza'];
-
   // Fetch marketing categories on component mount
   useEffect(() => {
     fetchMarketingCategories();
   }, []);
 
-  // Get top-rated properties from marketing categories
-  const topRatedProperties = marketingCategories?.popular || [];
+  // Get all properties from marketing categories
+  const allProperties = marketingCategories?.popular || [];
 
   // Create a Set of favorite property IDs for efficient lookup
   const favouritePropertyIds = useMemo(() => {
@@ -45,6 +42,9 @@ export default function FeaturedListings(
     );
   }, [favourites]);
 
+  // Use all properties since we're not filtering by region
+  const filteredProperties = allProperties;
+
   console.log('Favourite Property IDs:', favouritePropertyIds);
   console.log('favourites',favourites)
 
@@ -53,16 +53,6 @@ export default function FeaturedListings(
     const id = typeof propertyId === 'string' ? parseInt(propertyId) : propertyId;
     return favouritePropertyIds.has(id);
   };
-
-  // Filter properties by selected region if not 'All Regions'
-  const filteredProperties = selectedRegion === 'All Regions' 
-    ? topRatedProperties 
-    : topRatedProperties.filter(property => {
-        const address = property.properties?.address?.toLowerCase() || '';
-        const city = property.properties?.city?.toLowerCase() || '';
-        const regionLower = selectedRegion.toLowerCase();
-        return address.includes(regionLower) || city === regionLower;
-      });
 
   if (marketingLoading) {
     return (
@@ -95,9 +85,17 @@ export default function FeaturedListings(
     );
   }
 
+  // No need to show no properties message as we're showing all properties
+  const showNoProperties = false;
+
   return (
     <section id="listings" className="py-16 bg-muted">
       <div className="container mx-auto px-4">
+        {showNoProperties && (
+          <div className="text-center py-8">
+            <h3 className="text-xl font-semibold mb-2">No properties found</h3>
+          </div>
+        )}
         <motion.div
           className="flex justify-between items-center mb-8"
           variants={fadeIn}
@@ -108,28 +106,6 @@ export default function FeaturedListings(
           <Button variant="outline" size="sm" className="rounded-full hover:bg-primary hover:text-primary-foreground">
             View all <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
-        </motion.div>
-        
-        <motion.div
-          className="flex flex-wrap gap-2 mb-8"
-          variants={staggerContainer}
-          initial="initial"
-          whileInView="whileInView"
-        >
-          {regions.map((region, index) => (
-            <motion.span
-              key={index}
-              variants={fadeIn}
-              onClick={() => setSelectedRegion(region)}
-              className={`px-4 py-1 rounded-full text-sm cursor-pointer transition-colors duration-300 ${
-                region === selectedRegion
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-card border border-border hover:bg-primary/10'
-              }`}
-            >
-              {region}
-            </motion.span>
-          ))}
         </motion.div>
         
         <motion.div
@@ -160,9 +136,7 @@ export default function FeaturedListings(
           ) : (
             <div className="col-span-full text-center py-12">
               <p className="text-muted-foreground text-lg">
-                {selectedRegion === 'All Regions' 
-                  ? 'No top-rated properties available at the moment.'
-                  : `No properties found in ${selectedRegion}. Try another region.`}
+                No top-rated properties available at the moment.
               </p>
               <Button 
                 onClick={fetchMarketingCategories} 

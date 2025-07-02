@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
     Search,
@@ -66,9 +67,11 @@ export default function BookingProcess() {
         initial="initial"
         whileInView="whileInView"
       >
-        <Button className="btn-primary rounded-full text-lg px-8 py-3">
-          Start Now <ArrowRight className="ml-2 h-5 w-5" />
-        </Button>
+        <Link href="/signup" passHref>
+          <Button className="btn-primary rounded-full text-lg px-8 py-3">
+            Start Now <ArrowRight className="ml-2 h-5 w-5" />
+          </Button>
+        </Link>
       </motion.div>
     </div>
   </section>

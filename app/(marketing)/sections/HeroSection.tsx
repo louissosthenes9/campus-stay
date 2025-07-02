@@ -8,14 +8,13 @@ import {
 import Image from 'next/image';
 import { fadeIn, scaleIn, staggerContainer } from '@/utils/motion';
 import { Property } from '@/types/properties';
-import useProperty from '@/hooks/use-property';
 import PropertySearch from '@/components/property/PropertySearch';
 import { useRouter } from 'next/navigation';
 
 export default function HeroSection({ properties }: { properties: Property[] }) {
   const router = useRouter();
   const handleSearchResults = (results: Property[]) => {
-    // This will be handled by the search results page
+   
   };
   return (
      <section id="home" className="py-16 md:py-24 bg-gradient-to-b from-card to-muted">

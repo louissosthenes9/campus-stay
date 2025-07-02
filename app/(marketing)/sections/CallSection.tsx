@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { fadeIn} from '@/utils/motion';
 import { ArrowRight } from 'lucide-react';
@@ -19,9 +20,11 @@ export default function CallSection() {
           Join thousands of students who have found their ideal accommodation near campus.
         </p>
         <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-          <Button size="lg" className="bg-card text-primary hover:bg-card/90">
-            Get Started <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
+          <Link href="/signup" passHref>
+            <Button size="lg" className="bg-card text-primary hover:bg-card/90">
+              Get Started <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </Link>
           <Button
             size="lg"
             variant="outline"
