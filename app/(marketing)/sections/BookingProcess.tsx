@@ -36,7 +36,7 @@ export default function BookingProcess() {
           {
             icon: <Search className="text-primary" />,
             step: 'Step 2',
-            title: 'Submit an application and  contact broker',
+            title: 'Send Your Enquiry and get guided support',
             description: 'Apply for properties with guided support every step of the way.',
           },
           {

@@ -1,52 +1,63 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Search, UserPlus, Edit, Trash2, Loader2, Filter, X } from 'lucide-react';
-import { useUsers, type User, type UserFilters } from '@/hooks/use-users';
+import useUsers, { UserFilters } from '@/hooks/use-users';
 import { toast } from 'sonner';
 
 export default function UsersPage() {
   const router = useRouter();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<Partial<UserFilters>>({
     page: 1,
     page_size: 10,
     ordering: '-date_joined',
   });
+
   const [showFilters, setShowFilters] = useState(false);
 
-  const { users, loading, error, deleteUser, totalCount } = useUsers({
-    search: searchQuery || undefined,
-    ...filters,
-  });
+  const { users, loading, error, deleteUser, pagination, fetchUsers } = useUsers();
 
-  // Handle search with debounce
+  // Fetch users when filters or searchQuery change
+  useEffect(() => {
+    const fetchParams: Partial<UserFilters> = {
+      ...filters,
+      search: searchQuery || undefined,
+    };
+
+    fetchUsers(fetchParams);
+  }, [filters, searchQuery, fetchUsers]);
+
+  // Initial fetch on component mount
+  useEffect(() => {
+    fetchUsers(filters);
+  }, [fetchUsers, filters]);
+
+  // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
       setFilters(prev => ({
         ...prev,
         search: searchQuery || undefined,
-        page: 1, // Reset to first page on new search
+        page: 1,
       }));
     }, 500);
-
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
   const handleRoleFilter = (value: string) => {
     setFilters(prev => ({
       ...prev,
-      roles: value as 'student' | 'admin' | undefined,
-      page: 1, // Reset to first page when changing filters
+      roles: value === 'all' ? undefined : (value as 'student' | 'admin'),
+      page: 1,
     }));
   };
 
@@ -54,7 +65,7 @@ export default function UsersPage() {
     setFilters(prev => ({
       ...prev,
       is_active: value === 'all' ? undefined : value === 'active',
-      page: 1, // Reset to first page when changing filters
+      page: 1,
     }));
   };
 
@@ -85,16 +96,14 @@ export default function UsersPage() {
     router.push('/dashboard/users/create');
   };
 
-  const totalPages = Math.ceil((totalCount || 0) / (filters.page_size || 10));
+  const totalPages = Math.ceil((pagination?.count || 0) / (filters.page_size || 10));
 
   return (
     <div className="container mx-auto py-6">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">User Management</h1>
-          <p className="text-muted-foreground">
-            Manage all users in the system
-          </p>
+          <p className="text-muted-foreground">Manage all users in the system</p>
         </div>
         <Button onClick={handleCreateUser}>
           <UserPlus className="mr-2 h-4 w-4" />
@@ -116,11 +125,7 @@ export default function UsersPage() {
               />
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-              >
+              <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}>
                 <Filter className="mr-2 h-4 w-4" />
                 {showFilters ? 'Hide' : 'Show'} Filters
               </Button>
@@ -131,10 +136,7 @@ export default function UsersPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t">
               <div>
                 <Label htmlFor="role-filter">Role</Label>
-                <Select
-                  value={filters.roles || 'all'}
-                  onValueChange={handleRoleFilter}
-                >
+                <Select value={filters.roles || 'all'} onValueChange={handleRoleFilter}>
                   <SelectTrigger>
                     <SelectValue placeholder="Filter by role" />
                   </SelectTrigger>
@@ -271,30 +273,36 @@ export default function UsersPage() {
                   )}
                 </TableBody>
               </Table>
-
-              {(totalPages > 1 || filters.page > 1) && (
+              {(totalPages > 1 || (filters?.page || 1) > 1) && (
                 <div className="flex items-center justify-between px-6 py-4 border-t">
                   <div className="text-sm text-muted-foreground">
-                    Showing <span className="font-medium">{(filters.page - 1) * (filters.page_size || 10) + 1}</span> to{' '}
+                    Showing{' '}
                     <span className="font-medium">
-                      {Math.min(filters.page * (filters.page_size || 10), totalCount || 0)}
+                      {((filters.page || 1) - 1) * (filters.page_size || 10) + 1}
                     </span>{' '}
-                    of <span className="font-medium">{totalCount}</span> users
+                    to{' '}
+                    <span className="font-medium">
+                      {Math.min(
+                        (filters.page || 1) * (filters.page_size || 10),
+                        pagination?.count || 0
+                      )}
+                    </span>{' '}
+                    of <span className="font-medium">{pagination?.count || 0}</span> users
                   </div>
                   <div className="flex items-center space-x-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handlePageChange(filters.page - 1)}
-                      disabled={filters.page <= 1}
+                      onClick={() => handlePageChange((filters.page || 1) - 1)}
+                      disabled={(filters.page || 1) <= 1}
                     >
                       Previous
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handlePageChange(filters.page + 1)}
-                      disabled={filters.page >= Math.ceil((totalCount || 0) / (filters.page_size || 10))}
+                      onClick={() => handlePageChange((filters.page || 1) + 1)}
+                      disabled={(filters.page || 1) >= totalPages}
                     >
                       Next
                     </Button>
