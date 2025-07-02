@@ -2,136 +2,10 @@
 import { useState, useCallback, useMemo } from 'react';
 import useApi from './use-api'; 
 import useAuth from './use-auth';
-import { PropertyFormData, Property } from '@/types/properties';
+import { PropertyFormData, Property, ApiResponse, BackendPropertyResponse, MarketingCategories, MarketingCategoriesResponse, PaginatedResponse, PropertyFilters, SearchState, SortOption, ApiHook } from '@/types/properties';
+import { generateCacheKey, getPropertyAddress, getPropertyCoordinates, getPropertyPrice, getPropertyPrimaryImage, getPropertyTitle, isPropertyAvailable, transformBackendResponse, transformMarketingResponse, transformToApiFormat } from '@/utils/helpers';
 
-interface BackendPropertyResponse {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: {
-    type: 'FeatureCollection';
-    features: Property[];
-  };
-}
 
-// Marketing categories response structure
-interface MarketingCategoriesResponse {
-  popular: {
-    type: 'FeatureCollection';
-    features: Property[];
-  };
-  near_university: {
-    type: 'FeatureCollection';
-    features: Property[];
-  };
-  top_rated: {
-    type: 'FeatureCollection';
-    features: Property[];
-  };
-  special_needs: {
-    type: 'FeatureCollection';
-    features: Property[];
-  };
-  cheap: {
-    type: 'FeatureCollection';
-    features: Property[];
-  };
-}
-
-// Processed marketing categories for easier use
-export interface MarketingCategories {
-  popular: Property[];
-  near_university: Property[];
-  top_rated: Property[];
-  special_needs: Property[];
-  cheap: Property[];
-}
-
-// Simplified paginated response for easier use
-export interface PaginatedResponse<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-}
-
-// Enhanced filters for property search with all backend-supported options
-export interface PropertyFilters {
-  // Basic filters
-  search?: string;
-  page?: number;
-  page_size?: number;
-  ordering?: string;
-  
-  // Property type and categories
-  property_type?: string | string[];
-  amenities?: string | string[] | number[];
-  
-  // Location filters
-  university_id?: string;
-  distance?: number;
-  
-  // Price filters
-  price?: string | number;
-  min_price?: number;
-  max_price?: number;
-  
-  // Property features
-  bedrooms?: number | { min?: number; max?: number };
-  bedrooms__gte?: number;
-  bedrooms__lte?: number;
-  toilets?: number;
-  is_furnished?: boolean;
-  is_available?: boolean;
-  is_fenced?: boolean;
-  
-  // Utilities
-  electricity_type?: string | string[];
-  water_supply?: boolean;
-  windows_type?: string;
-  
-  // Size
-  size?: number;
-  size__gte?: number;
-  size__lte?: number;
-  
-  // Allow dynamic keys for any additional filters
-  [key: string]: any;
-}
-
-// Search and filter state management
-export interface SearchState {
-  query: string;
-  filters: PropertyFilters;
-  activeFilters: string[];
-  isSearching: boolean;
-  searchHistory: string[];
-}
-
-// Sorting options
-export interface SortOption {
-  value: string;
-  label: string;
-  direction: 'asc' | 'desc';
-}
-
-// API response structure
-interface ApiResponse<T = any> {
-  data: T;
-  status: number;
-  success: boolean;
-  error?: string;
-}
-
-// API hook interface
-interface ApiHook {
-  performGetRequest: <T>(endpoint: string, params?: object, headers?: object) => Promise<ApiResponse<T>>;
-  performPostRequest: <T>(endpoint: string, data: any, headers?: object, contentType?: string) => Promise<ApiResponse<T>>;
-  performPutRequest: <T>(endpoint: string, data: any, headers?: object) => Promise<ApiResponse<T>>;
-  performPatchRequest: <T>(endpoint: string, data: any, headers?: object) => Promise<ApiResponse<T>>;
-  performDeleteRequest: <T>(endpoint: string, data?: object, headers?: object) => Promise<ApiResponse<T>>;
-  performRequest: <T>(method: string, endpoint: string, data?: any, headers?: object, contentType?: string) => Promise<ApiResponse<T>>;
-}
 
 export default function useProperty() {
   const { 
@@ -180,62 +54,7 @@ export default function useProperty() {
     { value: '-title', label: 'Name: Z to A', direction: 'desc' }
   ], []);
   
-  // Helper function to transform backend response to simplified structure
-  const transformBackendResponse = (backendResponse: BackendPropertyResponse): PaginatedResponse<Property> => {
-    return {
-      count: backendResponse.count,
-      next: backendResponse.next,
-      previous: backendResponse.previous,
-      results: backendResponse.results.features || []
-    };
-  };
-
-  // Transform marketing categories response
-  const transformMarketingResponse = (marketingResponse: MarketingCategoriesResponse): MarketingCategories => {
-    return {
-      popular: marketingResponse.popular.features || [],
-      near_university: marketingResponse.near_university.features || [],
-      top_rated: marketingResponse.top_rated.features || [],
-      special_needs: marketingResponse.special_needs.features || [],
-      cheap: marketingResponse.cheap.features || [],
-    };
-  };
-
-  // Transform form data to match Django API format
-  const transformToApiFormat = (formData: PropertyFormData) => {
-    const apiData: any = {
-      name: formData.name,
-      title: formData.title,
-      description: formData.description,
-      property_type: formData.property_type,
-      price: formData.price,
-      bedrooms: formData.bedrooms,
-      toilets: formData.toilets,
-      address: formData.address,
-      available_from: formData.available_from,
-      lease_duration: formData.lease_duration,
-      is_furnished: formData.is_furnished,
-      is_fenced: formData.is_fenced,
-      windows_type: formData.windows_type,
-      electricity_type: formData.electricity_type,
-      water_supply: formData.water_supply,
-      size: formData.size,
-      amenity_ids: formData.amenity_ids || [],
-    };
-
-    // Add location if provided
-    if (formData.geometry) {
-      apiData.location = formData.geometry;
-    }
-
-    return apiData;
-  };
-
-  // Generate cache key for results
-  const generateCacheKey = (filters: PropertyFilters): string => {
-    return JSON.stringify(filters);
-  };
-
+ 
   // Check if cached result is still valid
   const isCacheValid = (timestamp: number): boolean => {
     return Date.now() - timestamp < CACHE_DURATION;
@@ -260,7 +79,7 @@ export default function useProperty() {
     
     // Handle price range
     if (cleaned.min_price || cleaned.max_price) {
-      if (cleaned.price) delete cleaned.price; // Remove individual price if range is specified
+      if (cleaned.price) delete cleaned.price;
     }
     
     // Handle bedroom filters
@@ -275,7 +94,7 @@ export default function useProperty() {
       delete cleaned.bedrooms;
     }
     
-    // Remove empty or undefined values
+
     Object.keys(cleaned).forEach(key => {
       const value = cleaned[key as keyof PropertyFilters];
       if (value === undefined || value === null || value === '') {
@@ -377,7 +196,7 @@ export default function useProperty() {
     } finally {
       setMarketingLoading(false);
     }
-  }, [performGetRequest, authHeaders]);
+  }, [performGetRequest]);
 
   // Enhanced fetch properties with search and filtering
   const fetchProperties = useCallback(async (
@@ -447,11 +266,7 @@ export default function useProperty() {
             timestamp: Date.now()
           }));
         }
-        console.log('Transformed Data:', transformedData);
-        console.log('Transformed Data Results:', transformedData.results);
-        console.log('Transformed Data Count:', transformedData.count);
-        console.log('Transformed Data Next:', transformedData.next);
-        console.log('Transformed Data Previous:', transformedData.previous);
+
         setProperties(transformedData.results);
         setPagination({
           count: transformedData.count,
@@ -477,7 +292,7 @@ export default function useProperty() {
     } finally {
       setLoading(false);
     }
-  }, [searchState.filters, searchState.query, cachedResults, performGetRequest, authHeaders]);
+  }, [searchState.filters, searchState.query, cachedResults, performGetRequest]);
 
   // Search properties with debouncing
   const searchProperties = useCallback(async (
@@ -532,7 +347,7 @@ export default function useProperty() {
     } finally {
       setLoading(false);
     }
-  }, [performGetRequest, authHeaders]);
+  }, [performGetRequest]);
 
   // Create new property
   const createProperty = useCallback(async (propertyData: PropertyFormData): Promise<Property | null> => {
@@ -593,7 +408,7 @@ export default function useProperty() {
     } finally {
       setLoading(false);
     }
-  }, [performPostRequest, authHeaders]);
+  }, [performPostRequest]);
 
   // Update existing property
   const updateProperty = useCallback(async (
@@ -659,7 +474,7 @@ export default function useProperty() {
     } finally {
       setLoading(false);
     }
-  }, [performPutRequest, authHeaders]);
+  }, [performPutRequest]);
 
   // Partial update of property
   const patchProperty = useCallback(async (
@@ -767,7 +582,7 @@ export default function useProperty() {
     } finally {
       setLoading(false);
     }
-  }, [performDeleteRequest, authHeaders]);
+  }, [performDeleteRequest]);
 
   // Delete property
   const deleteProperty = useCallback(async (id: string | number): Promise<boolean> => {
@@ -829,33 +644,9 @@ export default function useProperty() {
     } finally {
       setLoading(false);
     }
-  }, [performGetRequest, authHeaders]);
+  }, [performGetRequest]);
 
-  // Helper functions for easier property data access
-  const getPropertyCoordinates = (property: Property): [number, number] => {
-    return property.geometry.coordinates;
-  };
-
-  const getPropertyPrice = (property: Property): number => {
-    return property.properties.price;
-  };
-
-  const getPropertyTitle = (property: Property): string => {
-    return property.properties.title;
-  };
-
-  const getPropertyAddress = (property: Property): string => {
-    return property.properties.address;
-  };
-
-  const isPropertyAvailable = (property: Property): boolean => {
-    return property.properties.is_available;
-  };
-
-  const getPropertyPrimaryImage = (property: Property): string | null => {
-    return property.primary_image;
-  };
-
+  
   // Clear errors
   const clearError = useCallback(() => {
     setError(null);
