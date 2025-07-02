@@ -1,5 +1,6 @@
 
 export interface Property {
+  
   id: number;
   type: 'Feature';
   geometry: {
@@ -7,6 +8,7 @@ export interface Property {
     coordinates: [number, number];
   };
   properties: {
+    id: any;
     city: any;
     primary_image: string;
     amenities: any;
@@ -37,9 +39,10 @@ export interface Property {
     amenities_score: string;
     overall_score: string;
     distance_to_university?: number;
-    created_at: string;
+    created_at: string | number | Date;
     updated_at: string;
     videos: string[];
+
   };
   images: string[];
   videos: string[];
@@ -74,6 +77,7 @@ export interface Property {
     };
     distance: number;
     walking_time: number;
+ 
   }>;
 }
 
@@ -107,4 +111,11 @@ export interface PropertyImage {
   url: string;
   id?: string;
   [key: string]: any;
+}
+
+export interface Favourite {
+  id: number;
+  user: number;
+  property: number;
+  added_at: string;
 }

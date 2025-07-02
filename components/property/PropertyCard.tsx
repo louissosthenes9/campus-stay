@@ -6,7 +6,9 @@ import { Property } from '@/types/properties';
 import { formatDistance } from 'date-fns';
 import { enGB, fr } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import useFavourite from '@/hooks/use-favourite'; // Adjust path as needed
+import { toast } from 'sonner'; // or your preferred toast library
 
 interface PropertyCardProps {
   property: Property | (Property & {
@@ -16,6 +18,7 @@ interface PropertyCardProps {
   });
   className?: string;
   hideActions?: boolean;
+  isFavorited?: boolean; // New prop to override favorite status
 }
 
 // Media types
@@ -51,94 +54,124 @@ interface PropertyData {
   address?: string;
 }
 
-export default function PropertyCard({ property, className = '', hideActions = false }: PropertyCardProps) {
+function PropertyCard({ 
+  property, 
+  className = '', 
+  hideActions = false, 
+  isFavorited 
+}: PropertyCardProps) {
   const [activeTab, setActiveTab] = useState<'photos' | 'videos'>('photos');
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
   
-  // Handle property details for both search and regular views
-  const propertyData = 'properties' in property ? property.properties : property;
-  const propertyId = property.id;
+  // Memoize property data processing to prevent recalculation
+  const { propertyData, propertyId } = useMemo(() => {
+    const data = 'properties' in property ? property.properties : property;
+    const id = typeof property.id === 'string' ? parseInt(property.id) : property.id;
+    return { propertyData: data, propertyId: id };
+  }, [property]);
+
+  // Use the favourite hook
+  const { 
+    toggleFavorite, 
+    isFavorite, 
+    isLoading: favoriteLoading 
+  } = useFavourite();
   
-  const distance = 'distance_to_university' in propertyData ? 
-    (propertyData as any).distance_to_university || 0 : 0;
-  const availableFrom = 'available_from' in propertyData ? 
-    new Date((propertyData as any).available_from) : new Date();
-  
-  // Get media items with proper type assertions
-  let mediaImages: (string | PropertyMedia)[] = [];
-  let mediaVideos: (string | PropertyMedia)[] = [];
-  
-  if ('properties' in property) {
-    // Property with properties object (dashboard view)
-    const prop = property as any;
-    mediaImages = (prop.properties?.media || prop.media || []) as (string | PropertyMedia)[];
-    mediaVideos = (prop.properties?.videos || prop.videos || []) as (string | PropertyMedia)[];
-  } else {
-    // Regular property (search view)
-    const prop = property as any;
-    
-    // Handle media from different possible locations
-    if (prop.media?.length) {
-      mediaImages = prop.media.map((m: any) => ({
-        url: m.url || m,
-        id: m.id?.toString(),
-        type: 'image' as const,
-        thumbnail: m.thumbnail || m.url || m
-      }));
+  // Determine favorite status - use prop if provided, otherwise use hook
+  const isPropertyFavorite = useMemo(() => {
+    if (typeof isFavorited === 'boolean') {
+      return isFavorited;
     }
+    return propertyId ? isFavorite(propertyId) : false;
+  }, [isFavorited, isFavorite, propertyId]);
+  
+  // Memoize distance and available date
+  const { distance, availableFrom } = useMemo(() => {
+    const dist = 'distance_to_university' in propertyData ? 
+      (propertyData as any).distance_to_university || 0 : 0;
+    const available = 'available_from' in propertyData ? 
+      new Date((propertyData as any).available_from) : new Date();
+    return { distance: dist, availableFrom: available };
+  }, [propertyData]);
+  
+  // Memoize media processing
+  const { images, videos } = useMemo(() => {
+    let mediaImages: (string | PropertyMedia)[] = [];
+    let mediaVideos: (string | PropertyMedia)[] = [];
     
-    // Add primary image if available
-    if (prop.primary_image) {
-      mediaImages.unshift({
-        url: prop.primary_image,
-        type: 'image' as const
-      });
-    } else if (prop.images?.length) {
-      mediaImages = [
-        ...mediaImages,
-        ...prop.images.map((img: string) => ({
-          url: img,
+    if ('properties' in property) {
+      // Property with properties object (dashboard view)
+      const prop = property as any;
+      mediaImages = (prop.properties?.media || prop.media || []) as (string | PropertyMedia)[];
+      mediaVideos = (prop.properties?.videos || prop.videos || []) as (string | PropertyMedia)[];
+    } else {
+      // Regular property (search view)
+      const prop = property as any;
+      
+      // Handle media from different possible locations
+      if (prop.media?.length) {
+        mediaImages = prop.media.map((m: any) => ({
+          url: m.url || m,
+          id: m.id?.toString(),
+          type: 'image' as const,
+          thumbnail: m.thumbnail || m.url || m
+        }));
+      }
+      
+      // Add primary image if available
+      if (prop.primary_image) {
+        mediaImages.unshift({
+          url: prop.primary_image,
           type: 'image' as const
-        }))
-      ];
+        });
+      } else if (prop.images?.length) {
+        mediaImages = [
+          ...mediaImages,
+          ...prop.images.map((img: string) => ({
+            url: img,
+            type: 'image' as const
+          }))
+        ];
+      }
+      
+      // Handle videos
+      if (prop.videos?.length) {
+        mediaVideos = prop.videos.map((video: string | { url: string }) => ({
+          url: typeof video === 'string' ? video : video.url,
+          type: 'video' as const
+        }));
+      }
     }
     
-    // Handle videos
-    if (prop.videos?.length) {
-      mediaVideos = prop.videos.map((video: string | { url: string }) => ({
-        url: typeof video === 'string' ? video : video.url,
-        type: 'video' as const
-      }));
-    }
-  }
-  
-  // Convert to consistent format
-  const images: MediaItem[] = mediaImages.map((item): MediaItem => {
-    if (typeof item === 'string') {
-      return { url: item, type: 'image' as const };
-    }
-    const { url, id, type, thumbnail } = item;
-    return { 
-      url,
-      id,
-      type: type || 'image',
-      thumbnail
-    };
-  });
-  
-  const videos: MediaItem[] = mediaVideos.map((item): MediaItem => {
-    if (typeof item === 'string') {
-      return { url: item, type: 'video' as const };
-    }
-    const { url, id, type, thumbnail } = item;
-    return {
-      url,
-      id,
-      type: type || 'video',
-      thumbnail
-    };
-  });
+    // Convert to consistent format
+    const processedImages: MediaItem[] = mediaImages.map((item): MediaItem => {
+      if (typeof item === 'string') {
+        return { url: item, type: 'image' as const };
+      }
+      const { url, id, type, thumbnail } = item;
+      return { 
+        url,
+        id,
+        type: type || 'image',
+        thumbnail
+      };
+    });
+    
+    const processedVideos: MediaItem[] = mediaVideos.map((item): MediaItem => {
+      if (typeof item === 'string') {
+        return { url: item, type: 'video' as const };
+      }
+      const { url, id, type, thumbnail } = item;
+      return {
+        url,
+        id,
+        type: type || 'video',
+        thumbnail
+      };
+    });
+    
+    return { images: processedImages, videos: processedVideos };
+  }, [property]);
   
   const currentMedia = activeTab === 'photos' ? images : videos;
   const hasVideos = videos.length > 0;
@@ -148,48 +181,86 @@ export default function PropertyCard({ property, className = '', hideActions = f
     setCurrentIndex(0);
   }, [activeTab]);
   
-  const toggleFavorite = (e: React.MouseEvent) => {
+  const handleToggleFavorite = useCallback(async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsFavorite(!isFavorite);
-    // TODO: Implement actual favorite functionality
-    console.log('Toggle favorite', propertyId);
-  };
-  
-  const handleShare = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    // TODO: Implement share functionality
-    if (navigator.share) {
-      navigator.share({
-        title: propertyData.title,
-        text: `Check out this property: ${propertyData.title}`,
-        url: `${window.location.origin}/properties/${propertyId}`,
-      }).catch(console.error);
-    } else {
-      // Fallback for browsers that don't support Web Share API
-      navigator.clipboard.writeText(`${window.location.origin}/properties/${propertyId}`);
-      // TODO: Show a toast notification
+    
+    console.log('Toggling favorite for property:', propertyId);
+    
+    try {
+      const success = await toggleFavorite(propertyId);
+      
+      if (success) {
+        const action = isPropertyFavorite ? 'removed from' : 'added to';
+        toast.success(`Property ${action} favorites!`, {
+          description: propertyData.title,
+          duration: 2000,
+        });
+      } else {
+        toast.error('Failed to update favorites', {
+          description: 'Please try again later',
+          duration: 3000,
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast.error('Something went wrong', {
+        description: 'Please check your connection and try again',
+        duration: 3000,
+      });
     }
-  };
+  }, [propertyId, toggleFavorite, isPropertyFavorite, propertyData.title]);
   
-  const nextImage = (e: React.MouseEvent) => {
+  const handleShare = useCallback(async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const shareData = {
+      title: propertyData.title,
+      text: `Check out this property: ${propertyData.title}`,
+      url: `${window.location.origin}/properties/${propertyId}`,
+    };
+    
+    try {
+      if (navigator.share && navigator.canShare?.(shareData)) {
+        await navigator.share(shareData);
+        toast.success('Property shared successfully!');
+      } else {
+        // Fallback for browsers that don't support Web Share API
+        await navigator.clipboard.writeText(shareData.url);
+        toast.success('Property link copied to clipboard!', {
+          description: 'You can now paste it anywhere to share',
+          duration: 3000,
+        });
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name !== 'AbortError') {
+        console.error('Error sharing:', error);
+        toast.error('Failed to share property', {
+          description: 'Please try again',
+          duration: 3000,
+        });
+      }
+    }
+  }, [propertyData.title, propertyId]);
+  
+  const nextImage = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (currentMedia.length > 1) {
       setCurrentIndex((prev) => (prev + 1) % currentMedia.length);
     }
-  };
+  }, [currentMedia.length]);
   
-  const prevImage = (e: React.MouseEvent) => {
+  const prevImage = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (currentMedia.length > 1) {
       setCurrentIndex((prev) => (prev - 1 + currentMedia.length) % currentMedia.length);
     }
-  };
+  }, [currentMedia.length]);
   
-  const renderMedia = () => {
+  const renderMedia = useCallback(() => {
     if (currentMedia.length === 0) {
       return (
         <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
@@ -228,7 +299,7 @@ export default function PropertyCard({ property, className = '', hideActions = f
         className="w-full h-48 object-cover"
       />
     );
-  };
+  }, [currentMedia, currentIndex, activeTab, propertyData.title]);
 
   return (
     <Link href={`/properties/${propertyId}`} className="block h-full">
@@ -257,19 +328,29 @@ export default function PropertyCard({ property, className = '', hideActions = f
           {/* Favorite and Share buttons */}
           <div className="absolute top-3 left-3 right-3 flex justify-between">
             <button 
-              onClick={toggleFavorite}
-              className={`p-2 rounded-full shadow-md transition-all ${
-                isFavorite 
-                  ? 'bg-red-500 text-white' 
-                  : 'bg-white/90 hover:bg-white text-gray-700'
+              onClick={handleToggleFavorite}
+              disabled={favoriteLoading}
+              className={`p-2 rounded-full shadow-md transition-all duration-200 transform ${
+                favoriteLoading 
+                  ? 'scale-95 opacity-70 cursor-not-allowed' 
+                  : 'hover:scale-105 active:scale-95'
+              } ${
+                isPropertyFavorite 
+                  ? 'bg-red-500 text-white shadow-red-200' 
+                  : 'bg-white/90 hover:bg-white text-gray-700 hover:text-red-500'
               }`}
-              aria-label="Add to favorites"
+              aria-label={isPropertyFavorite ? "Remove from favorites" : "Add to favorites"}
             >
-              <Heart className="h-4 w-4" fill={isFavorite ? "currentColor" : "none"} />
+              <Heart 
+                className={`h-4 w-4 transition-all duration-200 ${
+                  favoriteLoading ? 'animate-pulse' : ''
+                }`} 
+                fill={isPropertyFavorite ? "currentColor" : "none"} 
+              />
             </button>
             <button 
               onClick={handleShare}
-              className="bg-white/90 hover:bg-white p-2 rounded-full shadow-md transition-colors text-gray-700"
+              className="bg-white/90 hover:bg-white p-2 rounded-full shadow-md transition-all duration-200 text-gray-700 hover:text-blue-600 hover:scale-105 active:scale-95"
               aria-label="Share property"
             >
               <Share2 className="h-4 w-4" />
@@ -351,7 +432,7 @@ export default function PropertyCard({ property, className = '', hideActions = f
               </div>
               <div className="flex items-center text-muted-foreground">
                 <Bath className="h-4 w-4 mr-1" />
-                {propertyData.toilets || 0} baths
+                {(propertyData as any).toilets || 0} baths
               </div>
               {propertyData.size && (
                 <div className="flex items-center text-muted-foreground">
@@ -388,3 +469,6 @@ export default function PropertyCard({ property, className = '', hideActions = f
     </Link>
   );
 }
+
+// Export memoized component to prevent unnecessary re-renders
+export default memo(PropertyCard);

@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+
+import useEnquiry, { EnquiryStatus } from '@/hooks/use-enquiry';
 import {
   Card,
   CardHeader,
@@ -25,82 +26,45 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Search, Filter, Mail, Phone, Clock, CheckCircle, Archive } from 'lucide-react';
-
-// Dummy Enquiries Data
-const dummyEnquiries = [
-  {
-    id: 1,
-    property: "Canvas Oyster Bay, Dar es Salaam",
-    client: "John Mwakipesile",
-    message: "I'm interested in booking a room. Can I visit next week?",
-    date: "2025-03-10",
-    status: "new",
-    phone: "+255 714 000 000",
-    email: "john@example.com"
-  },
-  {
-    id: 2,
-    property: "Modern Villa in Arusha",
-    client: "Amina Kassim",
-    message: "Is the gym open 24/7? What about the internet speed?",
-    date: "2025-03-08",
-    status: "contacted",
-    phone: "+255 714 000 001",
-    email: "amina@example.com"
-  },
-  {
-    id: 3,
-    property: "Affordable Hostel in Mwanza",
-    client: "David Nyamizi",
-    message: "Do you offer monthly payment plans?",
-    date: "2025-03-06",
-    status: "closed",
-    phone: "+255 714 000 002",
-    email: "david@example.com"
-  },
-  {
-    id: 4,
-    property: "Family House in Morogoro",
-    client: "Fatuma Saidi",
-    message: "Can I bring my pet? Is the compound secure?",
-    date: "2025-03-05",
-    status: "new",
-    phone: "+255 714 000 003",
-    email: "fatuma@example.com"
-  },
-  {
-    id: 5,
-    property: "Commercial Office Space",
-    client: "Charles Mwakila",
-    message: "I need more info on the lease terms and deposit.",
-    date: "2025-03-04",
-    status: "contacted",
-    phone: "+255 714 000 004",
-    email: "charles@example.com"
-  },
-];
+import { useEffect } from 'react';
 
 export default function EnquiryManagementPage() {
-  const [enquiries, setEnquiries] = useState(dummyEnquiries);
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [searchTerm, setSearchTerm] = useState("");
+  const {
+    enquiries,
+    loading,
+    error,
+    fetchEnquiries,
+    setSearchQuery,
+    updateFilters,
+    updateEnquiry,
+    currentPage,
+    totalPages,
+    canFetchNextPage,
+    canFetchPreviousPage,
+    fetchNextPage,
+    fetchPreviousPage,
+    EnquiryStatus,
+  } = useEnquiry();
 
-  // Filter by status
-  const filteredEnquiries = enquiries.filter((enquiry) => {
-    return (
-      (statusFilter === "all" || enquiry.status === statusFilter) &&
-      (enquiry.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       enquiry.property.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
-  });
+  // Initial fetch on mount
+  useEffect(() => {
+    fetchEnquiries();
+  }, []);
 
-  // Update status
-  const updateStatus = (id: number, newStatus: string) => {
-    setEnquiries(
-      enquiries.map((enq) =>
-        enq.id === id ? { ...enq, status: newStatus } : enq
-      )
-    );
+  // Handle search input change
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const term = e.target.value;
+    setSearchQuery(term);
+  };
+
+  // Handle status filter change
+  const handleStatusChange = (value: EnquiryStatus) => {
+    updateFilters({ status: value });
+  };
+
+  // Update status of an enquiry
+  const handleUpdateStatus = async (id: number, newStatus: EnquiryStatus) => {
+    await updateEnquiry(id, { status: newStatus });
   };
 
   return (
@@ -113,26 +77,33 @@ export default function EnquiryManagementPage() {
           <div className="relative flex-grow">
             <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
             <Input
-              placeholder="Search by property or client"
+              placeholder="Search by property or student"
               className="pl-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearch}
             />
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Select onValueChange={handleStatusChange}>
             <SelectTrigger className="w-full md:w-48">
               <Filter className="mr-2 h-4 w-4" />
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="new">New</SelectItem>
-              <SelectItem value="contacted">Contacted</SelectItem>
-              <SelectItem value="closed">Closed</SelectItem>
+              <SelectItem value={EnquiryStatus.PENDING}>New</SelectItem>
+              <SelectItem value={EnquiryStatus.IN_PROGRESS}>Contacted</SelectItem>
+              <SelectItem value={EnquiryStatus.RESOLVED}>Closed</SelectItem>
+              <SelectItem value={EnquiryStatus.CANCELLED}>Cancelled</SelectItem>
             </SelectContent>
           </Select>
         </CardContent>
       </Card>
+
+      {/* Error Handling */}
+      {error && (
+        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
+          {error}
+        </div>
+      )}
 
       {/* Enquiries Table */}
       <Card>
@@ -145,7 +116,7 @@ export default function EnquiryManagementPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Property</TableHead>
-                  <TableHead>Client</TableHead>
+                  <TableHead>Student</TableHead>
                   <TableHead>Message</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Status</TableHead>
@@ -153,53 +124,19 @@ export default function EnquiryManagementPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredEnquiries.length > 0 ? (
-                  filteredEnquiries.map((enquiry) => (
-                    <TableRow key={enquiry.id}>
-                      <TableCell className="font-medium">{enquiry.property}</TableCell>
-                      <TableCell>{enquiry.client}</TableCell>
-                      <TableCell className="max-w-xs truncate">{enquiry.message}</TableCell>
-                      <TableCell>{enquiry.date}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            enquiry.status === "new"
-                              ? "default"
-                              : enquiry.status === "contacted"
-                                ? "secondary"
-                                : "outline"
-                          }
-                          className="capitalize"
-                        >
-                          {enquiry.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Select
-                            value={enquiry.status}
-                            onValueChange={(value) => updateStatus(enquiry.id, value)}
-                          >
-                            <SelectTrigger className="h-8 w-28">
-                              <SelectValue placeholder="Update" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="new">New</SelectItem>
-                              <SelectItem value="contacted">Contacted</SelectItem>
-                              <SelectItem value="closed">Close</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Button size="sm" variant="outline" title="View Message">
-                            <Mail className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="outline" title="Call Client">
-                            <Phone className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8">
+                      Loading...
+                    </TableCell>
+                  </TableRow>
+                ) : error ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8">
+                      Failed to load data.
+                    </TableCell>
+                  </TableRow>
+                ) : enquiries.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8">
                       <div className="flex flex-col items-center text-gray-500">
@@ -209,14 +146,82 @@ export default function EnquiryManagementPage() {
                       </div>
                     </TableCell>
                   </TableRow>
+                ) : (
+                  enquiries.map((enquiry) => (
+                    <TableRow key={enquiry.id}>
+                      <TableCell className="font-medium">{enquiry.property.title}</TableCell>
+                      <TableCell>{enquiry.student.user.first_name} {enquiry.student.user.last_name}</TableCell>
+                      <TableCell className="max-w-xs truncate">{enquiry.message}</TableCell>
+                      <TableCell>{new Date(enquiry.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            enquiry.status === EnquiryStatus.PENDING
+                              ? 'default'
+                              : enquiry.status === EnquiryStatus.IN_PROGRESS
+                                ? 'secondary'
+                                : 'outline'
+                          }
+                          className="capitalize"
+                        >
+                          {enquiry.status.replace('_', ' ')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Select
+                            value={enquiry.status}
+                            onValueChange={(value) => handleUpdateStatus(enquiry.id, value as EnquiryStatus)}
+                          >
+                            <SelectTrigger className="h-8 w-28">
+                              <SelectValue placeholder="Update" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value={EnquiryStatus.PENDING}>New</SelectItem>
+                              <SelectItem value={EnquiryStatus.IN_PROGRESS}>Contacted</SelectItem>
+                              <SelectItem value={EnquiryStatus.RESOLVED}>Close</SelectItem>
+                              <SelectItem value={EnquiryStatus.CANCELLED}>Cancel</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button size="sm" variant="outline" title="View Message">
+                            <Mail className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="outline" title="Call Student">
+                            <Phone className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
                 )}
               </TableBody>
             </Table>
           </div>
+
+          {/* Pagination */}
+          <div className="mt-4 flex justify-between items-center">
+            <Button
+              onClick={() => fetchPreviousPage()}
+              disabled={!canFetchPreviousPage}
+              variant="outline"
+            >
+              Previous
+            </Button>
+            <span className="text-sm text-gray-600">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              onClick={() => fetchNextPage()}
+              disabled={!canFetchNextPage}
+              variant="outline"
+            >
+              Next
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Stats Summary (Optional) */}
+      {/* Stats Summary */}
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card className="bg-white shadow-sm">
           <CardContent className="p-4 flex items-center justify-between">
@@ -232,7 +237,7 @@ export default function EnquiryManagementPage() {
             <div>
               <p className="text-sm text-gray-600">New</p>
               <p className="text-2xl font-bold text-green-600">
-                {enquiries.filter((e) => e.status === 'new').length}
+                {enquiries.filter((e) => e.status === EnquiryStatus.PENDING).length}
               </p>
             </div>
             <CheckCircle className="h-8 w-8 text-green-600" />
@@ -243,7 +248,7 @@ export default function EnquiryManagementPage() {
             <div>
               <p className="text-sm text-gray-600">Contacted</p>
               <p className="text-2xl font-bold text-yellow-600">
-                {enquiries.filter((e) => e.status === 'contacted').length}
+                {enquiries.filter((e) => e.status === EnquiryStatus.IN_PROGRESS).length}
               </p>
             </div>
             <CheckCircle className="h-8 w-8 text-yellow-600" />

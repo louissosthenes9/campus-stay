@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, MapPin, Bed, Bath, Ruler, Heart, Share2, Phone, Mail, Calendar, Users, Home as HomeIcon, Info, AlertCircle, Wifi, ParkingCircle, Waves, Dumbbell, Wind, Shield, Shirt, Sofa } from 'lucide-react';
@@ -9,9 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PropertyImage } from '@/types/properties';
 import useProperty from '@/hooks/use-property';
+import useFavourite from '@/hooks/use-favourite';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
 import PropertyMapView from '@/components/map/PropertyMapView';
+import Sidebar from './Sidebar';
 
 interface PropertyMedia {
   url: string;
@@ -28,8 +30,14 @@ export default function PropertyViewPage() {
 
   const [property, setProperty] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('details');
-  const [isFavorite, setIsFavorite] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const { isFavorite, toggleFavorite, addFavorite, removeFavorite, isLoading: favoriteLoading } = useFavourite();
+
+  // Get the current favorite status for the property
+  const isPropertyFavorite = useMemo(() => {
+    if (!property?.properties?.id) return false;
+    return isFavorite(property.properties.id);
+  }, [property?.properties?.id, isFavorite]);
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -53,10 +61,21 @@ export default function PropertyViewPage() {
     setCurrentImageIndex(index);
   };
 
-  const toggleFavorite = () => {
-    setIsFavorite(!isFavorite);
-    // TODO: Add to favorites logic
-  };
+  const handleToggleFavorite = useCallback(async () => {
+    if (!property?.properties?.id) {
+      console.error('Property ID not found');
+      return;
+    }
+    
+    const propertyId = property.properties.id;
+    
+    try {
+      await toggleFavorite(propertyId);
+      
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    }
+  }, [property?.properties?.id, toggleFavorite]);
 
   const shareProperty = () => {
     if (navigator.share) {
@@ -178,14 +197,20 @@ export default function PropertyViewPage() {
                   </div>
                 </div>
                 <div className="flex space-x-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={toggleFavorite}
-                    aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                  <Button 
+                    variant={isPropertyFavorite ? 'default' : 'outline'} 
+                    size="icon" 
+                    className="rounded-full transition-all duration-200"
+                    onClick={handleToggleFavorite}
+                    disabled={favoriteLoading}
+                    aria-label={isPropertyFavorite ? 'Remove from favorites' : 'Add to favorites'}
                   >
-                    <Heart
-                      className={`w-5 h-5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}`}
+                    <Heart 
+                      className={`h-5 w-5 transition-all duration-200 ${
+                        isPropertyFavorite 
+                          ? 'fill-white text-white scale-110' 
+                          : 'text-gray-500 hover:text-red-500'
+                      }`}
                     />
                   </Button>
                   <Button
@@ -350,76 +375,7 @@ export default function PropertyViewPage() {
           </Card>
         </div>
 
-        {/* Sidebar */}
-        <div className="lg:w-1/3 space-y-6">
-          {/* Contact Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Contact Agent</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center">
-                  <Users className="w-6 h-6 text-indigo-600" />
-                </div>
-                <div>
-                  <h4 className="font-medium">Property Manager</h4>
-                  <p className="text-sm text-gray-500">Campus Stay Team</p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Button className="w-full" size="lg">
-                  <Phone className="w-4 h-4 mr-2" />
-                  Call Now
-                </Button>
-                <Button variant="outline" className="w-full" size="lg">
-                  <Mail className="w-4 h-4 mr-2" />
-                  Send Message
-                </Button>
-                <Button variant="outline" className="w-full" size="lg">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Schedule Viewing
-                </Button>
-              </div>
-
-              <div className="pt-4 border-t border-gray-200">
-                <p className="text-sm text-gray-500 text-center">
-                  Response time: Usually within 24 hours
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Similar Properties */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Similar Properties</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {[1, 2].map((item) => (
-                  <div key={item} className="flex space-x-4 p-2 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer">
-                    <div className="w-20 h-20 bg-gray-200 rounded-md flex-shrink-0"></div>
-                    <div>
-                      <h4 className="font-medium text-sm">Similar Property {item}</h4>
-                      <p className="text-sm text-gray-500">TZS {(price * (1 - (item * 0.1))).toLocaleString()}/mo</p>
-                      <div className="flex items-center text-xs text-gray-500 mt-1">
-                        <Bed className="w-3 h-3 mr-1" />
-                        <span className="mr-3">{bedrooms || 0} bds</span>
-                        <Bath className="w-3 h-3 mr-1" />
-                        <span>{toilets || 0} ba</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <Button variant="link" className="w-full mt-4" size="sm">
-                View all similar properties
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+        <Sidebar  price={price} bedrooms={bedrooms} toilets={toilets}/>
       </div>
     </div>
   );

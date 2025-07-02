@@ -10,7 +10,7 @@ type ActiveFilters = {
   min_price: number;
   max_price: number;
   property_type: string[] | undefined;
-  amenities: number[] | undefined;
+  amenities: string[] | undefined; // Changed from number[] to string[]
   bedrooms: number | null;
   bedrooms__gte: number | null;
   bedrooms__lte: number | null;
@@ -36,15 +36,22 @@ const propertyTypes = [
   { id: 'hostel', label: 'Hostel' },
   { id: 'studio', label: 'Studio' },
   { id: 'shared_room', label: 'Shared Room' },
+  { id: 'single_room', label: 'Single Room' }, 
+  { id: 'master_bedroom', label: 'Master' }, 
 ];
 
+// Updated amenities list with proper IDs that match your backend
 const amenitiesList = [
-  { id: 'wifi', label: 'Wi-Fi' },
-  { id: 'parking', label: 'Parking' },
-  { id: 'ac', label: 'Air Conditioning' },
-  { id: 'furnished', label: 'Furnished' },
-  { id: 'laundry', label: 'Laundry' },
-  { id: 'security', label: '24/7 Security' },
+  { id: '11', label: 'Wi-Fi' },
+  { id: '12', label: 'Parking' },
+  { id: '13', label: 'Air Conditioning' },
+  { id: '14', label: 'Furnished' },
+  { id: '15', label: 'Laundry' },
+  { id: '16', label: '24/7 Security' },
+  { id: '17', label: 'Gym' },
+  { id: '18', label: 'Swimming Pool' },
+  { id: '18', label: 'High Speed Internet' },
+  { id: '19', label: 'Kitchen Access' },
 ];
 
 const sortOptions = [
@@ -71,7 +78,7 @@ export default function SearchPage() {
     min_price: searchParams.get('min_price') ? Number(searchParams.get('min_price')) : 0,
     max_price: searchParams.get('max_price') ? Number(searchParams.get('max_price')) : 500000,
     property_type: searchParams.get('property_type') ? searchParams.get('property_type')?.split(',') : [],
-    amenities: searchParams.get('amenities') ? searchParams.get('amenities')?.split(',').map(Number).filter(Boolean) : [],
+    amenities: searchParams.get('amenities') ? searchParams.get('amenities')?.split(',').filter(Boolean) : [], // Fixed amenities parsing
     bedrooms: searchParams.get('bedrooms') ? Number(searchParams.get('bedrooms')) : null,
     bedrooms__gte: searchParams.get('bedrooms__gte') ? Number(searchParams.get('bedrooms__gte')) : null,
     bedrooms__lte: searchParams.get('bedrooms__lte') ? Number(searchParams.get('bedrooms__lte')) : null,
@@ -159,16 +166,16 @@ export default function SearchPage() {
     // Build filters object for API with proper typing
     const filters: Record<string, any> = {
       search: activeFilters.search || undefined,
-      price__gte: activeFilters.min_price > 0 ? activeFilters.min_price : undefined,
-      price__lte: activeFilters.max_price < 500000 ? activeFilters.max_price : undefined,
-      property_type__in: activeFilters.property_type?.length ? activeFilters.property_type.join(',') : undefined,
-      amenities__in: activeFilters.amenities?.length ? activeFilters.amenities.join(',') : undefined,
+      min_price: activeFilters.min_price > 0 ? activeFilters.min_price : undefined,
+      max_price: activeFilters.max_price < 500000 ? activeFilters.max_price : undefined,
+      property_type: activeFilters.property_type?.length ? activeFilters.property_type.join(',') : undefined,
+      amenities: activeFilters.amenities?.length ? activeFilters.amenities.join(',') : undefined, // Fixed amenities joining
       bedrooms: activeFilters.bedrooms || undefined,
       bedrooms__gte: activeFilters.bedrooms__gte || undefined,
       bedrooms__lte: activeFilters.bedrooms__lte || undefined,
       toilets: activeFilters.toilets || undefined,
       is_furnished: activeFilters.is_furnished || undefined,
-      electricity_type__in: activeFilters.electricity_type?.length ? activeFilters.electricity_type.join(',') : undefined,
+      electricity_type: activeFilters.electricity_type?.length ? activeFilters.electricity_type.join(',') : undefined,
     };
 
     debouncedFetchProperties(filters);
@@ -224,17 +231,14 @@ export default function SearchPage() {
     });
   };
 
-  // Toggle amenity filter
+  // Fixed toggle amenity filter
   const toggleAmenity = (amenityId: string) => {
     setActiveFilters((prev: ActiveFilters) => {
       const currentAmenities = Array.isArray(prev.amenities) ? prev.amenities : [];
-      const amenityNumber = parseInt(amenityId, 10);
       
-      if (isNaN(amenityNumber)) return prev;
-      
-      const amenities = currentAmenities.includes(amenityNumber)
-        ? currentAmenities.filter((a: number) => a !== amenityNumber)
-        : [...currentAmenities, amenityNumber];
+      const amenities = currentAmenities.includes(amenityId)
+        ? currentAmenities.filter((a: string) => a !== amenityId)
+        : [...currentAmenities, amenityId];
       
       return {
         ...prev,
@@ -298,6 +302,12 @@ export default function SearchPage() {
     activeFilters.is_furnished ||
     (activeFilters.electricity_type && activeFilters.electricity_type.length > 0);
 
+  // Helper function to get amenity label by ID
+  const getAmenityLabel = (amenityId: string) => {
+    const amenity = amenitiesList.find(a => a.id === amenityId);
+    return amenity ? amenity.label : amenityId;
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Search Header */}
@@ -345,7 +355,7 @@ export default function SearchPage() {
               
               {activeFilters.property_type?.map((type: string) => (
                 <Badge key={type} className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full flex items-center">
-                  {type}
+                  {propertyTypes.find(pt => pt.id === type)?.label || type}
                   <button 
                     onClick={() => handleFilterChange({ 
                       property_type: activeFilters.property_type?.filter((t: string) => t !== type) || [] 
@@ -381,9 +391,10 @@ export default function SearchPage() {
                 </Badge>
               )}
               
+              {/* Fixed amenities badge display */}
               {activeFilters.amenities?.map(amenity => (
                 <Badge key={amenity} className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full flex items-center">
-                  {amenity}
+                  {getAmenityLabel(amenity)}
                   <button 
                     onClick={() => handleFilterChange({ 
                       amenities: activeFilters.amenities?.filter(a => a !== amenity) || [] 
@@ -465,8 +476,8 @@ export default function SearchPage() {
                     
                     // Debounced filter update
                     debouncedFetchProperties({
-                      price__gte: values[0] > 0 ? values[0] : undefined,
-                      price__lte: values[1] < 500000 ? values[1] : undefined,
+                      min_price: values[0] > 0 ? values[0] : undefined,
+                      max_price: values[1] < 500000 ? values[1] : undefined,
                     });
                   }}
                   onValueCommit={(values) => {
@@ -556,7 +567,7 @@ export default function SearchPage() {
               </div>
             </div>
             
-            {/* Amenities Filter */}
+            {/* Fixed Amenities Filter */}
             <div className="mb-6">
               <h3 className="text-sm font-medium mb-3">Amenities</h3>
               <div className="space-y-2">
@@ -564,12 +575,12 @@ export default function SearchPage() {
                   <div key={amenity.id} className="flex items-center">
                     <Checkbox
                       id={`amenity-${amenity.id}`}
-                      checked={activeFilters.amenities?.includes(parseInt(amenity.id, 10))}
+                      checked={activeFilters.amenities?.includes(amenity.id) || false}
                       onCheckedChange={(checked) => {
                         handleFilterChange({
                           amenities: checked
-                            ? [...(activeFilters.amenities || []), parseInt(amenity.id, 10)]
-                            : (activeFilters.amenities || []).filter(a => a !== parseInt(amenity.id, 10))
+                            ? [...(activeFilters.amenities || []), amenity.id]
+                            : (activeFilters.amenities || []).filter(a => a !== amenity.id)
                         });
                       }}
                       className="h-4 w-4 rounded"

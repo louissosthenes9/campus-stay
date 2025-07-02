@@ -1,25 +1,27 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { fadeIn, staggerContainer } from '@/utils/motion';
 import useProperty from '@/hooks/use-property'; 
-import { Property } from '@/types/properties';
+import { Favourite, Property } from '@/types/properties';
 import PropertyCard from '@/components/property/PropertyCard';
 
 type FeaturedListingsProps = {
   properties?: Property[];
+  favourites?: Favourite[];
 }
+
 export default function FeaturedListings(
-  { properties }: FeaturedListingsProps
+  { properties, favourites }: FeaturedListingsProps
 ) {
   const { 
     marketingCategories, 
     marketingLoading, 
     marketingError, 
     fetchMarketingCategories 
-  } = useProperty();43
+  } = useProperty();
   
   const [selectedRegion, setSelectedRegion] = useState('All Regions');
   const regions = ['All Regions', 'Dar es Salaam', 'Morogoro', 'Dodoma', 'Arusha', 'Mwanza'];
@@ -28,18 +30,39 @@ export default function FeaturedListings(
   useEffect(() => {
     fetchMarketingCategories();
   }, []);
-  console.log(marketingCategories)
 
   // Get top-rated properties from marketing categories
   const topRatedProperties = marketingCategories?.popular || [];
 
+  // Create a Set of favorite property IDs for efficient lookup
+  const favouritePropertyIds = useMemo(() => {
+    if (!favourites || !Array.isArray(favourites)) return new Set<number>();
+    
+    return new Set(
+      favourites.map(fav => {
+       return fav.property
+      })
+    );
+  }, [favourites]);
+
+  console.log('Favourite Property IDs:', favouritePropertyIds);
+  console.log('favourites',favourites)
+
+  // Helper function to check if a property is favorited
+  const isPropertyFavorited = (propertyId: number | string): boolean => {
+    const id = typeof propertyId === 'string' ? parseInt(propertyId) : propertyId;
+    return favouritePropertyIds.has(id);
+  };
+
   // Filter properties by selected region if not 'All Regions'
   const filteredProperties = selectedRegion === 'All Regions' 
     ? topRatedProperties 
-    : topRatedProperties.filter(property => 
-        property.properties?.address?.toLowerCase().includes(selectedRegion.toLowerCase()) ||
-        property.properties?.city?.toLowerCase() === selectedRegion.toLowerCase()
-      );
+    : topRatedProperties.filter(property => {
+        const address = property.properties?.address?.toLowerCase() || '';
+        const city = property.properties?.city?.toLowerCase() || '';
+        const regionLower = selectedRegion.toLowerCase();
+        return address.includes(regionLower) || city === regionLower;
+      });
 
   if (marketingLoading) {
     return (
@@ -116,18 +139,24 @@ export default function FeaturedListings(
           whileInView="whileInView"
         >
           {filteredProperties.length > 0 ? (
-            filteredProperties.slice(0, 6).map((property) => (
-              <motion.div
-                key={property.id}
-                variants={fadeIn}
-                className="h-full"
-              >
-                <PropertyCard 
-                  property={property} 
+            filteredProperties.slice(0, 6).map((property) => {
+              const propertyId = typeof property.id === 'string' ? parseInt(property.id) : property.id;
+              const isFavorited = isPropertyFavorited(propertyId);
+              
+              return (
+                <motion.div
+                  key={property.id}
+                  variants={fadeIn}
                   className="h-full"
-                />
-              </motion.div>
-            ))
+                >
+                  <PropertyCard 
+                    property={property} 
+                    className="h-full"
+                    isFavorited={isFavorited}
+                  />
+                </motion.div>
+              );
+            })
           ) : (
             <div className="col-span-full text-center py-12">
               <p className="text-muted-foreground text-lg">

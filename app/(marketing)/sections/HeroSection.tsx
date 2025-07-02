@@ -62,9 +62,9 @@ export default function HeroSection({ properties }: { properties: Property[] }) 
                   >
                     <div className="relative rounded-xl overflow-hidden shadow-2xl">
                       <Image
-                        src="/student-room.jpg"
-                        width={600}
-                        height={400}
+                        src="/hero-3.jpg"
+                        width={400}
+                        height={200}
                         alt="Student searching for accommodation"
                         className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500"
                       />

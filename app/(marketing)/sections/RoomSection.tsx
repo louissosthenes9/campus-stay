@@ -6,89 +6,7 @@ import { Clock, Shield, ArrowRight, Star, MapPin, Bed, Bath, Wifi, Car, Heart } 
 import { fadeIn, scaleIn, staggerContainer } from '@/utils/motion';
 import useProperty from '@/hooks/use-property';
 import { Property } from '@/types/properties';
-
-// Property card component
-const PropertyCard = ({ property, index }: { property: Property; index: number }) => {
-  const [isLiked, setIsLiked] = useState(false);
-  
-  const cardVariants = {
-    initial: { opacity: 0, y: 50 },
-    whileInView: { 
-      opacity: 1, 
-      y: 0,
-      transition: { 
-        duration: 0.6,
-        delay: index * 0.1,
-        ease: "easeOut"
-      }
-    }
-  };
-
-  return (
-    <motion.div
-      variants={cardVariants}
-      initial="initial"
-      whileInView="whileInView"
-      viewport={{ once: true }}
-      className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden transform hover:-translate-y-2"
-    >
-      <div className="relative overflow-hidden">
-        <Image
-          src={property.primary_image || '/student-room-placeholder.jpg'}
-          alt={property.properties.title}
-          width={400}
-          height={250}
-          className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-700"
-        />
-        <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg">
-          <Heart 
-            className={`w-4 h-4 cursor-pointer transition-colors ${isLiked ? 'text-red-500 fill-red-500' : 'text-gray-400'}`}
-            onClick={() => setIsLiked(!isLiked)}
-          />
-        </div>
-        <div className="absolute bottom-3 left-3 bg-primary text-white px-3 py-1 rounded-full text-sm font-medium">
-          ${property.properties.price}/month
-        </div>
-      </div>
-      
-      <div className="p-5">
-        <div className="flex items-start justify-between mb-3">
-          <h3 className="font-bold text-lg text-gray-800 line-clamp-1">
-            {property.properties.title}
-          </h3>
-          <div className="flex items-center gap-1 bg-yellow-100 px-2 py-1 rounded-full">
-            <Star className="w-3 h-3 text-yellow-600 fill-yellow-600" />
-            <span className="text-xs font-medium text-yellow-700">4.8</span>
-          </div>
-        </div>
-        
-        <div className="flex items-center text-gray-600 mb-3">
-          <MapPin className="w-4 h-4 mr-1" />
-          <span className="text-sm line-clamp-1">{property.properties.address}</span>
-        </div>
-        
-        <div className="flex items-center gap-4 text-gray-600 mb-4">
-          <div className="flex items-center gap-1">
-            <Bed className="w-4 h-4" />
-            <span className="text-sm">{property.properties.bedrooms}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Bath className="w-4 h-4" />
-            <span className="text-sm">{property.properties.toilets}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Wifi className="w-4 h-4" />
-            <span className="text-sm">WiFi</span>
-          </div>
-        </div>
-        
-        <button className="w-full bg-gradient-to-r from-primary to-blue-600 text-white py-2.5 rounded-xl font-medium hover:from-blue-600 hover:to-primary transition-all duration-300 transform hover:scale-105">
-          View Details
-        </button>
-      </div>
-    </motion.div>
-  );
-};
+import PropertyCard from '@/components/property/PropertyCard';
 
 export default function RoomSection() {
   const { 
@@ -284,7 +202,7 @@ export default function RoomSection() {
               key={activeTab} // This ensures re-animation when tab changes
             >
               {displayProperties.slice(0, 6).map((property, index) => (
-                <PropertyCard key={property.id} property={property} index={index} />
+                <PropertyCard key={property.id} property={property}/>
               ))}
             </motion.div>
           )}

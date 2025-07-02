@@ -21,11 +21,15 @@ import RoomSection from './sections/RoomSection';
 import CallSection from './sections/CallSection';
 import { useAuthContext } from '@/contexts/AuthContext';
 import useProperty from '@/hooks/use-property';
+import useFavourite from '@/hooks/use-favourite';
 
 
 export default function HomePage() {
   const {isAuthenticated, user} = useAuthContext()
   const {properties} = useProperty();
+  const {favorites} = useFavourite();
+  console.log('Properties:', properties);
+  console.log('Favorites:', favorites);
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
@@ -33,8 +37,8 @@ export default function HomePage() {
       <main>
         {/* Sections for the main content*/}
         <HeroSection  properties = {properties}/>
-        <FeaturedListings properties = {properties}/>
-        <UniversitySection/>
+        <FeaturedListings properties = {properties} favourites={favorites}/>
+        {/* <UniversitySection/> */}
         <BookingProcess />
         <RoomSection />
        
