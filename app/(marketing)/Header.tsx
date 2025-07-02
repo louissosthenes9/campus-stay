@@ -11,7 +11,7 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const { isAuthenticated, user, logout } = useAuthContext();
-  const profileDropdownRef = useRef(null);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
   
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -23,8 +23,8 @@ export default function Header() {
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: { target: any; }) => {
-      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target)) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileDropdownRef.current && event.target instanceof Node && !profileDropdownRef.current.contains(event.target)) {
         setIsProfileDropdownOpen(false);
       }
     };
