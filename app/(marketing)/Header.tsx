@@ -1,21 +1,44 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, User, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthContext } from '@/contexts/AuthContext';
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const { isAuthenticated, user, logout } = useAuthContext();
+  const profileDropdownRef = useRef(null);
   
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
+  const toggleProfileDropdown = () => {
+    setIsProfileDropdownOpen(!isProfileDropdownOpen);
+  };
 
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: { target: any; }) => {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target)) {
+        setIsProfileDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+    setIsProfileDropdownOpen(false);
+  };
 
   const navLinks = [
     { name: 'Home', href: '#home' },
@@ -52,13 +75,46 @@ export default function Header() {
           {/* Auth Buttons (Desktop) */}
           <div className="hidden md:flex items-center space-x-3">
             {isAuthenticated ? (
-              <Button
-                variant="outline"
-                className="text-primary font-bold"
-                onClick={logout}
-              >
-                Logout
-              </Button>
+              <div className="relative" ref={profileDropdownRef}>
+                <Button
+                  variant="outline"
+                  className="text-primary font-bold flex items-center space-x-2"
+                  onClick={toggleProfileDropdown}
+                >
+                  <User size={16} />
+                  <span>Profile</span>
+                  <ChevronDown size={16} className={`transition-transform duration-200 ${isProfileDropdownOpen ? 'rotate-180' : ''}`} />
+                </Button>
+                
+                <AnimatePresence>
+                  {isProfileDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg py-2 z-50"
+                    >
+                      <Link
+                        href="/profile"
+                        className="flex items-center space-x-2 px-4 py-2 text-foreground hover:bg-muted transition-colors duration-200"
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                      >
+                        <User size={16} />
+                        <span>My Profile</span>
+                      </Link>
+                      <hr className="my-1 border-border" />
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center space-x-2 px-4 py-2 text-foreground hover:bg-muted transition-colors duration-200 w-full text-left"
+                      >
+                        <X size={16} />
+                        <span>Logout</span>
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             ) : (
               <>
                 <div className="border-2 border-primary rounded-full hover:bg-indigo-300 transition-all duration-200">
@@ -112,16 +168,26 @@ export default function Header() {
             </nav>
             <div className="flex flex-col space-y-3 mt-4 pt-4 border-t border-border">
               {isAuthenticated ? (
-                <Button
-                  variant="outline"
-                  className="text-primary font-bold w-full"
-                  onClick={() => {
-                    logout();
-                    toggleMobileMenu();
-                  }}
-                >
-                  Logout
-                </Button>
+                <>
+                  <Link
+                    href="/profile"
+                    className="flex items-center space-x-2 text-primary font-bold py-2 border-2 border-primary rounded-full text-center justify-center hover:bg-indigo-300 transition-all duration-200"
+                    onClick={toggleMobileMenu}
+                  >
+                    <User size={16} />
+                    <span>My Profile</span>
+                  </Link>
+                  <Button
+                    variant="outline"
+                    className="text-foreground font-bold w-full"
+                    onClick={() => {
+                      handleLogout();
+                      toggleMobileMenu();
+                    }}
+                  >
+                    Logout
+                  </Button>
+                </>
               ) : (
                 <>
                   <div className="border-2 border-primary rounded-full hover:bg-indigo-300 transition-all duration-200">
