@@ -1,5 +1,5 @@
 'use client';
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import useApi from './use-api'; 
 import useAuth from './use-auth';
 import { User } from '@/types/properties';
@@ -132,13 +132,13 @@ export default function useUsers() {
     searchHistory: []
   });
   
-  // Cached results for performance
-  const [cachedResults, setCachedResults] = useState<Map<string, { data: User[], timestamp: number }>>(new Map());
+  // Cached results for performance - use useRef to avoid re-renders
+  const cachedResults = useRef<Map<string, { data: User[], timestamp: number }>>(new Map());
   
   const API_ENDPOINT = '/users/';
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
   
-  // Predefined sort options
+  // Predefined sort options - moved outside or use useMemo with empty deps
   const sortOptions: SortOption[] = useMemo(() => [
     { value: 'date_joined', label: 'Newest First', direction: 'desc' },
     { value: '-date_joined', label: 'Oldest First', direction: 'asc' },
@@ -148,30 +148,30 @@ export default function useUsers() {
     { value: '-last_name', label: 'Last Name: Z to A', direction: 'desc' },
     { value: 'username', label: 'Username: A to Z', direction: 'asc' },
     { value: '-username', label: 'Username: Z to A', direction: 'desc' }
-  ], []);
+  ], []); // Empty dependency array since this never changes
   
   // Helper function to transform backend response to simplified structure
-  const transformBackendResponse = (backendResponse: BackendUsersResponse): PaginatedResponse<User> => {
+  const transformBackendResponse = useCallback((backendResponse: BackendUsersResponse): PaginatedResponse<User> => {
     return {
       count: backendResponse.count,
       next: backendResponse.next,
       previous: backendResponse.previous,
       results: backendResponse.results || []
     };
-  };
+  }, []);
 
   // Generate cache key for results
-  const generateCacheKey = (filters: UserFilters): string => {
+  const generateCacheKey = useCallback((filters: UserFilters): string => {
     return JSON.stringify(filters);
-  };
+  }, []);
 
   // Check if cached result is still valid
-  const isCacheValid = (timestamp: number): boolean => {
+  const isCacheValid = useCallback((timestamp: number): boolean => {
     return Date.now() - timestamp < CACHE_DURATION;
-  };
+  }, []);
 
   // Clean and format filters according to backend expectations
-  const cleanFilters = (filters: UserFilters): UserFilters => {
+  const cleanFilters = useCallback((filters: UserFilters): UserFilters => {
     const cleaned = { ...filters };
     
     // Remove empty or undefined values
@@ -183,7 +183,7 @@ export default function useUsers() {
     });
     
     return cleaned;
-  };
+  }, []);
 
   // Update search state
   const updateSearchState = useCallback((updates: Partial<SearchState>) => {
@@ -192,56 +192,65 @@ export default function useUsers() {
 
   // Set search query
   const setSearchQuery = useCallback((query: string) => {
-    updateSearchState({ 
-      query,
-      isSearching: query.length > 0
+    setSearchState(prev => {
+      // Add to search history if not empty and not already in history
+      const newHistory = query && !prev.searchHistory.includes(query)
+        ? [query, ...prev.searchHistory.slice(0, 9)] // Keep last 10 searches
+        : prev.searchHistory;
+      
+      return {
+        ...prev,
+        query,
+        isSearching: query.length > 0,
+        searchHistory: newHistory
+      };
     });
-    
-    // Add to search history if not empty and not already in history
-    if (query && !searchState.searchHistory.includes(query)) {
-      updateSearchState({
-        searchHistory: [query, ...searchState.searchHistory.slice(0, 9)] // Keep last 10 searches
-      });
-    }
-  }, [searchState.searchHistory, updateSearchState]);
+  }, []);
 
   // Update filters
   const updateFilters = useCallback((newFilters: Partial<UserFilters>) => {
-    const updatedFilters = { ...searchState.filters, ...newFilters };
-    const cleanedFilters = cleanFilters(updatedFilters);
-    
-    // Update active filters list
-    const activeFilters = Object.keys(cleanedFilters).filter(key => 
-      key !== 'page' && key !== 'page_size' && key !== 'ordering'
-    );
-    
-    updateSearchState({ 
-      filters: cleanedFilters,
-      activeFilters
+    setSearchState(prev => {
+      const updatedFilters = { ...prev.filters, ...newFilters };
+      const cleanedFilters = cleanFilters(updatedFilters);
+      
+      // Update active filters list
+      const activeFilters = Object.keys(cleanedFilters).filter(key => 
+        key !== 'page' && key !== 'page_size' && key !== 'ordering'
+      );
+      
+      return {
+        ...prev,
+        filters: cleanedFilters,
+        activeFilters
+      };
     });
-  }, [searchState.filters, updateSearchState]);
+  }, [cleanFilters]);
 
   // Clear all filters
   const clearFilters = useCallback(() => {
-    updateSearchState({
+    setSearchState(prev => ({
+      ...prev,
       filters: {},
       activeFilters: [],
       query: ''
-    });
-  }, [updateSearchState]);
+    }));
+  }, []);
 
   // Clear specific filter
   const clearFilter = useCallback((filterKey: keyof UserFilters) => {
-    const updatedFilters = { ...searchState.filters };
-    delete updatedFilters[filterKey];
-    
-    const activeFilters = searchState.activeFilters.filter(key => key !== filterKey);
-    
-    updateSearchState({
-      filters: updatedFilters,
-      activeFilters
+    setSearchState(prev => {
+      const updatedFilters = { ...prev.filters };
+      delete updatedFilters[filterKey];
+      
+      const activeFilters = prev.activeFilters.filter(key => key !== filterKey);
+      
+      return {
+        ...prev,
+        filters: updatedFilters,
+        activeFilters
+      };
     });
-  }, [searchState.filters, searchState.activeFilters, updateSearchState]);
+  }, []);
 
   // Set sorting
   const setSorting = useCallback((sortValue: string) => {
@@ -253,8 +262,9 @@ export default function useUsers() {
     customFilters: UserFilters = {},
     useCache: boolean = true
   ): Promise<PaginatedResponse<User> | null> => {
-    setLoading(true);
+    
     setError(null);
+    setLoading(true);
     
     // Combine current filters with custom filters
     // Always exclude admin users
@@ -277,7 +287,7 @@ export default function useUsers() {
     
     // Check cache first
     if (useCache) {
-      const cachedResult = cachedResults.get(cacheKey);
+      const cachedResult = cachedResults.current.get(cacheKey);
       if (cachedResult && isCacheValid(cachedResult.timestamp)) {
         const cachedResponse: PaginatedResponse<User> = {
           count: cachedResult.data.length,
@@ -313,10 +323,10 @@ export default function useUsers() {
         
         // Cache the results
         if (useCache) {
-          setCachedResults(prev => new Map(prev).set(cacheKey, {
+          cachedResults.current.set(cacheKey, {
             data: transformedData.results,
             timestamp: Date.now()
-          }));
+          });
         }
         
         setUsers(transformedData.results);
@@ -344,7 +354,7 @@ export default function useUsers() {
     } finally {
       setLoading(false);
     }
-  }, [searchState.filters, searchState.query, cachedResults, performGetRequest, authHeaders]);
+  }, [searchState.filters, searchState.query, cleanFilters, generateCacheKey, isCacheValid, transformBackendResponse, performGetRequest, authHeaders]);
 
   // Search users with debouncing
   const searchUsers = useCallback(async (
@@ -480,7 +490,7 @@ export default function useUsers() {
         if (response.data.roles !== 'admin') {
           setUser(prev => (prev && prev.id === Number(id) ? response.data : prev));
           // Clear cache after updating user
-          setCachedResults(new Map());
+          cachedResults.current.clear();
           return response.data;
         } else {
           setError('Access denied: Cannot update admin users');
@@ -518,7 +528,7 @@ export default function useUsers() {
         if (response.data.roles !== 'admin') {
           setUser(prev => (prev && prev.id === Number(id) ? response.data : prev));
           // Clear cache after updating user
-          setCachedResults(new Map());
+          cachedResults.current.clear();
           return response.data;
         } else {
           setError('Access denied: Cannot update admin users');
@@ -578,7 +588,7 @@ export default function useUsers() {
     } finally {
       setLoading(false);
     }
-  }, [performPatchRequest, authHeaders, currentUser]);
+  }, [performPatchRequest, authHeaders, currentUser?.id]);
 
   // Delete user (only if current user has permission - typically only self-deletion)
   const deleteUser = useCallback(async (id: string | number): Promise<boolean> => {
@@ -593,7 +603,7 @@ export default function useUsers() {
         setUsers(prev => prev.filter(u => u.id !== Number(id)));
         setUser(prev => prev && prev.id === Number(id) ? null : prev);
         // Clear cache after deleting user
-        setCachedResults(new Map());
+        cachedResults.current.clear();
         return true;
       } else {
         setError(response.error || `Failed to delete user ${id}`);
@@ -635,39 +645,39 @@ export default function useUsers() {
     } finally {
       setLoading(false);
     }
-  }, [performGetRequest, authHeaders]);
+  }, [performGetRequest, authHeaders, transformBackendResponse]);
 
   // Helper functions for easier user data access
-  const getUserFullName = (user: User): string => {
+  const getUserFullName = useCallback((user: User): string => {
     return `${user.first_name} ${user.last_name}`.trim() || user.username;
-  };
+  }, []);
 
-  const getUserDisplayName = (user: User): string => {
+  const getUserDisplayName = useCallback((user: User): string => {
     return user.first_name ? `${user.first_name} ${user.last_name}`.trim() : user.username;
-  };
+  }, []);
 
-  const getUserInitials = (user: User): string => {
+  const getUserInitials = useCallback((user: User): string => {
     if (user.first_name && user.last_name) {
       return `${user.first_name.charAt(0)}${user.last_name.charAt(0)}`.toUpperCase();
     }
     return user.username.substring(0, 2).toUpperCase();
-  };
+  }, []);
 
-  const isCurrentUser = (user: User): boolean => {
+  const isCurrentUser = useCallback((user: User): boolean => {
     return Number(user.id) === Number(currentUser?.id);
-  };
+  }, [currentUser?.id]);
 
-  const getUserProfilePicture = (user: User): string | null => {
+  const getUserProfilePicture = useCallback((user: User): string | null => {
     return user.student_profile?.profile_picture || null;
-  };
+  }, []);
 
-  const getUserUniversity = (user: User): string | null => {
+  const getUserUniversity = useCallback((user: User): string | null => {
     return user.student_profile?.university_name || null;
-  };
+  }, []);
 
-  const getUserCourse = (user: User): string | null => {
+  const getUserCourse = useCallback((user: User): string | null => {
     return user.student_profile?.course || null;
-  };
+  }, []);
 
   // Clear errors
   const clearError = useCallback(() => {
@@ -676,7 +686,7 @@ export default function useUsers() {
 
   // Clear cache
   const clearCache = useCallback(() => {
-    setCachedResults(new Map());
+    cachedResults.current.clear();
   }, []);
 
   // Reset state
@@ -686,7 +696,7 @@ export default function useUsers() {
     setCurrentUserProfile(null);
     setError(null);
     setPagination(null);
-    setCachedResults(new Map());
+    cachedResults.current.clear();
   }, []);
 
   const resetSearchState = useCallback(() => {
@@ -706,11 +716,11 @@ export default function useUsers() {
 
   const canFetchNextPage = useMemo(() => {
     return pagination?.next !== null;
-  }, [pagination]);
+  }, [pagination?.next]);
 
   const canFetchPreviousPage = useMemo(() => {
     return pagination?.previous !== null;
-  }, [pagination]);
+  }, [pagination?.previous]);
 
   const currentPage = useMemo(() => {
     return searchState.filters.page || 1;

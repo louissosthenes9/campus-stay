@@ -29,11 +29,7 @@ import {
       href: "/dashboard/users",
       icon:UserCircle,
     },
-    {
-      label: "University Management",
-      href: "/dashboard/universities",
-      icon:School2Icon,
-    },
+ 
   ];
   
   export const BROKER_FOOTER_MENU_ITEMS = [
