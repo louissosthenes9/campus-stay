@@ -7,8 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Upload, X } from 'lucide-react';
-import { User, UserUpdateData, StudentProfileUpdateData } from '@/hooks/use-users';
 import { toast } from 'sonner';
+import {User}from '@/types/properties';
 
 // Types for form data
 interface UserFormData {
