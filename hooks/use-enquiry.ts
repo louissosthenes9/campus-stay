@@ -66,7 +66,7 @@ export interface Enquiry {
 
 // Form data interfaces
 export interface CreateEnquiryData {
-  property_id: number;
+  property: number;
   message: string;
 }
 
@@ -83,7 +83,7 @@ export interface UpdateEnquiryData {
 export interface EnquiryFilters {
   status?: EnquiryStatus;
   is_active?: boolean;
-  property_id?: number;
+  property?: number;
   page?: number;
   page_size?: number;
   ordering?: string;
