@@ -50,8 +50,8 @@ const amenitiesList = [
   { id: '16', label: '24/7 Security' },
   { id: '17', label: 'Gym' },
   { id: '18', label: 'Swimming Pool' },
-  { id: '18', label: 'High Speed Internet' },
-  { id: '19', label: 'Kitchen Access' },
+  { id: '19', label: 'High Speed Internet' },
+  { id: '20', label: 'Kitchen Access' },
 ];
 
 const sortOptions = [
