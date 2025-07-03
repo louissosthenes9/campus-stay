@@ -247,3 +247,39 @@ export interface MarketingCategoriesResponse {
     features: Property[];
   };
 }
+
+
+export interface StudentProfile {
+  id: number;
+  university: number;
+  university_name?: string;
+  course: string;
+  year_of_study?: number;
+  graduation_year?: number;
+  student_id?: string;
+  bio?: string;
+  phone_number?: string;
+  emergency_contact?: string;
+  date_of_birth?: string;
+  gender?: 'M' | 'F' | 'O';
+  nationality?: string;
+  special_needs?: string;
+  profile_picture?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  roles: 'student' | 'admin';
+  is_active: boolean;
+  date_joined: string;
+  last_login?: string;
+  google_id?: string;
+  student_profile?: StudentProfile;
+}

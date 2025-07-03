@@ -30,9 +30,18 @@ export default function HomePage() {
         {/* Sections for the main content*/}
         <HeroSection  properties = {properties}/>
         <FeaturedListings properties = {properties} favourites={favorites}/>
-        <BookingProcess />
-        <RoomSection />
+        {
+          !isAuthenticated && (
+           <>
+            <BookingProcess />
+            <RoomSection />
+            <CallSection />
+           </>
        
+          )
+            
+        }
+     
          {
           isAuthenticated ? (
             <div></div>
@@ -40,7 +49,7 @@ export default function HomePage() {
             <Testmonials />
           )
          }
-        <CallSection />
+     
     
       </main>
       <Footer />

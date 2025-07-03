@@ -41,15 +41,18 @@ export default function DashboardPage() {
     id: property.properties.id,
     name: property.properties.name,
     type: property.properties.property_type,
+  
     location: property.properties.address,
     status: property.properties.is_available,
     price: property.properties.price.toLocaleString('en-GB', { style: 'currency', currency: 'TZS' })
   }));
   const activeStudentPercentage = users.length ? ((users.filter(user => user.is_active).length / users.length) * 100).toFixed(2) : 0;
-  const recentEnquiries = enquiries?.slice(0, 5).map(enquiry => ({
+  console.log('enquiries', enquiries);
+  const recentEnquiries = enquiries?.map(enquiry => ({
     id: enquiry.id,
-    student: enquiry.student_details?.first_name || "N/A",
-    property: enquiry.property_details?.title || "N/A",
+    student: enquiry.student_details?.user.first_name || "N/A",
+    property: enquiry.property_details?.properties.title || "N/A",
+    mobile:enquiry.student_details?.user.mobile || "N/A",
     date: new Date(enquiry.created_at).toLocaleDateString(),
     status: enquiry.status
   }));
@@ -134,31 +137,47 @@ export default function DashboardPage() {
             <CardContent className="pt-4">
               <Table>
                 <TableCaption>A list of your recent properties.</TableCaption>
-                <TableHeader>
+                <TableHeader className="hidden md:table-header-group">
                   <TableRow>
                     <TableHead>Property</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead className="hidden md:table-cell">Type</TableHead>
+                    <TableHead className="hidden lg:table-cell">Location</TableHead>
+                    <TableHead className="hidden sm:table-cell">Status</TableHead>
                     <TableHead className="text-right">Price</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {(recentProperties ?? []).map((property, index) => (
                     <TableRow key={`property-${index}`}>
-                      <TableCell className="font-medium">{property.name ?? "N/A"}</TableCell>
-                      <TableCell>{property.type ?? "N/A"}</TableCell>
-                      <TableCell>{property.location ?? "N/A"}</TableCell>
-                      <TableCell>
+                      <TableCell className="font-medium">
+                        <div className="md:hidden mb-2 font-semibold">{property.name ?? "N/A"}</div>
+                        <div className="hidden md:block">{property.name ?? "N/A"}</div>
+                        <div className="md:hidden text-sm text-muted-foreground">
+                          {property.type ?? "N/A"} • {property.location ?? "N/A"}
+                        </div>
+                        <div className="md:hidden mt-1">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
+                            property.status === true 
+                              ? "bg-green-100 text-green-800" 
+                              : "bg-orange-100 text-orange-800"
+                          }`}>
+                            {property.status ? "Available" : "Not Available"}
+                          </span>
+                          <span className="ml-2 font-medium">{property.price ?? "N/A"}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">{property.type ?? "N/A"}</TableCell>
+                      <TableCell className="hidden lg:table-cell">{property.location ?? "N/A"}</TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                          property.status ===true 
+                          property.status === true 
                             ? "bg-green-100 text-green-800" 
                             : "bg-orange-100 text-orange-800"
                         }`}>
-                          {property.status ? "Available":"Not Available"}
+                          {property.status ? "Available" : "Not Available"}
                         </span>
                       </TableCell>
-                      <TableCell className="text-right">{property.price ?? "N/A"}</TableCell>
+                      <TableCell className="text-right hidden md:table-cell">{property.price ?? "N/A"}</TableCell>
                     </TableRow>
                   ))}
                   {(!recentProperties || recentProperties.length === 0) && (
@@ -177,22 +196,49 @@ export default function DashboardPage() {
             <CardContent className="pt-4">
               <Table>
                 <TableCaption>A list of your recent enquiries.</TableCaption>
-                <TableHeader>
+                <TableHeader className="hidden md:table-header-group">
                   <TableRow>
                     <TableHead>Student</TableHead>
-                    <TableHead>Property</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead className="hidden lg:table-cell">Mobile</TableHead>
+                    <TableHead className="hidden lg:table-cell">Property</TableHead>
+                    <TableHead className="hidden md:table-cell">Date</TableHead>
+                    <TableHead className="hidden sm:table-cell">Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {(recentEnquiries ?? []).map((enquiry, index) => (
                     <TableRow key={`enquiry-${index}`}>
-                      <TableCell className="font-medium">{enquiry.student ?? "N/A"}</TableCell>
-                      <TableCell>{enquiry.property ?? "N/A"}</TableCell>
-                      <TableCell>{enquiry.date ?? "N/A"}</TableCell>
-                      <TableCell>
+                      <TableCell className="font-medium">
+                        <div className="md:hidden mb-1 font-semibold">{enquiry.student ?? "N/A"}</div>
+                        <div className="hidden md:block">{enquiry.student ?? "N/A"}</div>
+                        <div className="md:hidden text-sm text-muted-foreground">
+                          <div>{enquiry.mobile ?? "N/A"}</div>
+                          <div>{enquiry.property ?? "N/A"}</div>
+                        </div>
+                        <div className="md:hidden mt-1 text-sm">
+                          {enquiry.date ?? "N/A"}
+                          <span className={`ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs ${
+                            enquiry.status === EnquiryStatus.PENDING 
+                              ? "bg-yellow-100 text-yellow-800" 
+                              : enquiry.status === EnquiryStatus.RESOLVED
+                                ? "bg-green-100 text-green-800"
+                                : enquiry.status === EnquiryStatus.CANCELLED
+                                  ? "bg-red-100 text-red-800"
+                                  : "bg-blue-100 text-blue-800"
+                          }`}>
+                            {enquiry.status ?? "N/A"}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        <a href={`tel:${enquiry.mobile}`} className="hover:underline text-blue-600">
+                          {enquiry.mobile ?? "N/A"}
+                        </a>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">{enquiry.property ?? "N/A"}</TableCell>
+                      <TableCell className="hidden md:table-cell">{enquiry.date ?? "N/A"}</TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
                           enquiry.status === EnquiryStatus.PENDING 
                             ? "bg-yellow-100 text-yellow-800" 

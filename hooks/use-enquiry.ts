@@ -2,7 +2,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import useApi from './use-api';
 import useAuth from './use-auth';
-import { ApiHook } from '@/types/properties';
+import { ApiHook, Property } from '@/types/properties';
 
 // Enquiry status enum
 export enum EnquiryStatus {
@@ -21,41 +21,36 @@ export interface UserDetails {
   last_name: string;
   course?: string;
   created_at: string;
-  [key: string]: any; // For any additional fields that might be present
+  [key: string]: any;
 }
 
-export interface PropertyDetails {
-  id: number;
-  type: string;
-  geometry: any; // You might want to define a more specific type for geometry
-  [key: string]: any; // For any additional fields in property_details
-}
+
 
 export interface EnquiryMessage {
   id: number;
-  enquiry: number;
+  enquiry?: number; // Optional since it might not always be included
   sender_id: number;
   content: string;
   created_at: string;
   updated_at: string;
   is_read?: boolean;
-  [key: string]: any; // For any additional fields
+  [key: string]: any;
 }
 
 export interface Enquiry {
   id: number;
   property: number;
-  property_details: PropertyDetails;
+  property_details: Property;
   student: number;
-  student_details: UserDetails;
-  status: string;
+  student_details: CourseObject;
+  status: EnquiryStatus; // Changed from string to EnquiryStatus enum
   status_display: string;
   created_at: string;
   updated_at: string;
   is_active: boolean;
   messages: EnquiryMessage[];
   unread_count?: number;
-  [key: string]: any; // For any additional fields that might be present
+  [key: string]: any;
 }
 
 // Form data interfaces
@@ -75,7 +70,7 @@ export interface UpdateEnquiryData {
 
 // Filter interfaces
 export interface EnquiryFilters {
-  status?: EnquiryStatus;
+  status?: EnquiryStatus | string; // Allow both enum and string
   is_active?: boolean;
   property?: number;
   page?: number;
@@ -93,6 +88,28 @@ export interface PaginatedResponse<T> {
   results: T[];
 }
 
+export interface CourseObject {
+  id: number;
+  course: string;
+  created_at: string;
+  updated_at: string;
+  university_details: {
+    id: number;
+    type: string;
+    geometry: Record<string, any>;
+    [key: string]: any;
+  };
+  user: {
+    id: number;
+    email: string;
+    first_name: string;
+    last_name: string;
+    mobile: string;
+    profile_pic: string | null;
+    roles: string;
+    date_joined: string;
+  };
+}
 // Search and filter state
 export interface EnquirySearchState {
   query: string;
@@ -107,8 +124,6 @@ export interface SortOption {
   label: string;
   direction: 'asc' | 'desc';
 }
-
-
 
 export default function useEnquiry() {
   const {
@@ -127,6 +142,7 @@ export default function useEnquiry() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState<Omit<PaginatedResponse<any>, 'results'> | null>(null);
+  
   
   // Message state
   const [messages, setMessages] = useState<EnquiryMessage[]>([]);
@@ -623,7 +639,7 @@ export default function useEnquiry() {
   const getEnquiryParticipants = (enquiry: Enquiry) => {
     return {
       student: enquiry.student_details,
-      propertyOwner: enquiry.property_details?.user
+      
     };
   };
   
@@ -631,13 +647,7 @@ export default function useEnquiry() {
     return enquiry.student_details.id === Number(user?.id);
   };
   
-  const isPropertyOwner = (enquiry: Enquiry, currentUserId?: number): boolean => {
-    if (!currentUserId) return false;
-    // This assumes property owner ID is available in property_details
-    // You might need to adjust this based on your actual data structure
-    return enquiry.property_details?.user?.id === currentUserId;
-  };
-  
+
   const getUnreadMessagesCount = (enquiry: Enquiry): number => {
     return enquiry.messages?.filter(msg => !msg.is_read).length || 0;
   };
@@ -647,15 +657,19 @@ export default function useEnquiry() {
     return enquiry.messages[enquiry.messages.length - 1];
   };
   
-  const getEnquiryStatusColor = (status: EnquiryStatus): string => {
+  const getEnquiryStatusColor = (status: EnquiryStatus | string): string => {
     switch (status) {
       case EnquiryStatus.PENDING:
+      case 'pending':
         return 'orange';
       case EnquiryStatus.IN_PROGRESS:
+      case 'in_progress':
         return 'blue';
       case EnquiryStatus.RESOLVED:
+      case 'resolved':
         return 'green';
       case EnquiryStatus.CANCELLED:
+      case 'cancelled':
         return 'red';
       default:
         return 'gray';
@@ -780,7 +794,6 @@ export default function useEnquiry() {
     // Helper functions
     getEnquiryParticipants,
     isEnquiryOwner,
-    isPropertyOwner,
     getUnreadMessagesCount,
     getLastMessage,
     getEnquiryStatusColor,

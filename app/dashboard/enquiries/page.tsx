@@ -149,8 +149,8 @@ export default function EnquiryManagementPage() {
                 ) : (
                   enquiries.map((enquiry) => (
                     <TableRow key={enquiry.id}>
-                      <TableCell className="font-medium">{enquiry.property_details?.title || 'N/A'}</TableCell>
-                      <TableCell>{enquiry.student_details?.first_name || 'N/A'} {enquiry.student_details?.last_name || ''}</TableCell>
+                      <TableCell className="font-medium">{enquiry.property_details?.properties.title || 'N/A'}</TableCell>
+                      <TableCell>{enquiry.student_details?.user.first_name || 'N/A'} {enquiry.student_details?.user.last_name || ''}</TableCell>
                       <TableCell className="max-w-xs truncate">{enquiry.messages?.[0]?.content || 'No message'}</TableCell>
                       <TableCell>{new Date(enquiry.created_at).toLocaleDateString()}</TableCell>
                       <TableCell>
