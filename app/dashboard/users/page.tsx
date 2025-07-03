@@ -222,7 +222,7 @@ export default function UsersPage() {
                                 {user.first_name} {user.last_name}
                               </div>
                               <div className="text-xs text-muted-foreground">
-                                @{user.username}
+                                @{user.email}
                               </div>
                             </div>
                           </div>
