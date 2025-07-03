@@ -126,3 +126,35 @@
     @apply bg-primary text-primary-foreground rounded-lg px-4 py-2 transition-all hover:bg-gradient-to-r hover:from-primary hover:to-blue-500 focus:ring-2 focus:ring-ring;
   }
 }
+
+.property-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.property-marker:hover {
+  transform: scale(1.1);
+  z-index: 10;
+}
+
+.property-marker svg {
+  width: 24px;
+  height: 24px;
+}
+
+.mapboxgl-popup {
+  z-index: 20;
+}
+
+.mapboxgl-popup-content {
+  padding: 0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}

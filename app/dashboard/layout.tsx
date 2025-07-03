@@ -12,21 +12,21 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html>
-      <body className="min-h-screen bg-gray-50 flex">
+   
+      <main className="min-h-screen bg-gray-50 flex">
         <SidebarProvider defaultOpen={true} >
           <ClientProviders>
             <DashboardSidebar />
-            <main className="px-12 flex-1">
+            <div className="px-12 flex-1">
               <SidebarTrigger />
               <AuthProvider>
                 {children}
               </AuthProvider>
-            </main>
+            </div>
             <Toaster position="top-center" richColors />
           </ClientProviders>
         </SidebarProvider>
-      </body>
-    </html>
+        </main>
+   
   );
 }
