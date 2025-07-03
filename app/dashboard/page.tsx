@@ -48,8 +48,8 @@ export default function DashboardPage() {
   const activeStudentPercentage = users.length ? ((users.filter(user => user.is_active).length / users.length) * 100).toFixed(2) : 0;
   const recentEnquiries = enquiries?.slice(0, 5).map(enquiry => ({
     id: enquiry.id,
-    student: enquiry.student.user.username || "N/A",
-    property: enquiry.property.title || "N/A",
+    student: enquiry.student_details?.first_name || "N/A",
+    property: enquiry.property_details?.title || "N/A",
     date: new Date(enquiry.created_at).toLocaleDateString(),
     status: enquiry.status
   }));
@@ -144,8 +144,8 @@ export default function DashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(recentProperties ?? []).map((property) => (
-                    <TableRow key={property.id}>
+                  {(recentProperties ?? []).map((property, index) => (
+                    <TableRow key={`property-${index}`}>
                       <TableCell className="font-medium">{property.name ?? "N/A"}</TableCell>
                       <TableCell>{property.type ?? "N/A"}</TableCell>
                       <TableCell>{property.location ?? "N/A"}</TableCell>
@@ -162,7 +162,7 @@ export default function DashboardPage() {
                     </TableRow>
                   ))}
                   {(!recentProperties || recentProperties.length === 0) && (
-                    <TableRow>
+                    <TableRow key="no-properties">
                       <TableCell colSpan={5} className="text-center">No recent properties available.</TableCell>
                     </TableRow>
                   )}
@@ -187,8 +187,8 @@ export default function DashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(recentEnquiries ?? []).map((enquiry) => (
-                    <TableRow key={enquiry.id}>
+                  {(recentEnquiries ?? []).map((enquiry, index) => (
+                    <TableRow key={`enquiry-${index}`}>
                       <TableCell className="font-medium">{enquiry.student ?? "N/A"}</TableCell>
                       <TableCell>{enquiry.property ?? "N/A"}</TableCell>
                       <TableCell>{enquiry.date ?? "N/A"}</TableCell>
@@ -209,7 +209,7 @@ export default function DashboardPage() {
                     </TableRow>
                   ))}
                   {(!recentEnquiries || recentEnquiries.length === 0) && (
-                    <TableRow>
+                    <TableRow key="no-enquiries">
                       <TableCell colSpan={5} className="text-center">No recent enquiries available.</TableCell>
                     </TableRow>
                   )}

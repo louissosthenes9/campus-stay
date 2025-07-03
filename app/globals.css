@@ -1,6 +1,10 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:is(.dark *));
+@layer base {
+  .dark {
+    color-scheme: dark;
+  }
+}
 
 @theme inline {
   --color-background: var(--background);

@@ -13,55 +13,49 @@ export enum EnquiryStatus {
 }
 
 // Core enquiry interfaces
+export interface UserDetails {
+  id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  course?: string;
+  created_at: string;
+  [key: string]: any; // For any additional fields that might be present
+}
+
+export interface PropertyDetails {
+  id: number;
+  type: string;
+  geometry: any; // You might want to define a more specific type for geometry
+  [key: string]: any; // For any additional fields in property_details
+}
+
 export interface EnquiryMessage {
   id: number;
   enquiry: number;
-  sender: {
-    id: number;
-    username: string;
-    email: string;
-    first_name: string;
-    last_name: string;
-  };
+  sender_id: number;
   content: string;
-  is_read: boolean;
   created_at: string;
   updated_at: string;
+  is_read?: boolean;
+  [key: string]: any; // For any additional fields
 }
 
 export interface Enquiry {
   id: number;
-  student: {
-    id: number;
-    user: {
-      id: number;
-      username: string;
-      email: string;
-      first_name: string;
-      last_name: string;
-    };
-  };
-  property: {
-    id: number;
-    title: string;
-    address: string;
-    price: number;
-    user: {
-      id: number;
-      username: string;
-      email: string;
-      first_name: string;
-      last_name: string;
-    };
-  };
-  subject: string;
-  message: string;
-  status: EnquiryStatus;
-  is_active: boolean;
+  property: number;
+  property_details: PropertyDetails;
+  student: number;
+  student_details: UserDetails;
+  status: string;
+  status_display: string;
   created_at: string;
   updated_at: string;
+  is_active: boolean;
   messages: EnquiryMessage[];
   unread_count?: number;
+  [key: string]: any; // For any additional fields that might be present
 }
 
 // Form data interfaces
@@ -628,17 +622,20 @@ export default function useEnquiry() {
   // Helper functions
   const getEnquiryParticipants = (enquiry: Enquiry) => {
     return {
-      student: enquiry.student.user,
-      propertyOwner: enquiry.property.user
+      student: enquiry.student_details,
+      propertyOwner: enquiry.property_details?.user
     };
   };
   
   const isEnquiryOwner = (enquiry: Enquiry): boolean => {
-    return enquiry.student.user.id === Number(user?.id);
+    return enquiry.student_details.id === Number(user?.id);
   };
   
-  const isPropertyOwner = (enquiry: Enquiry): boolean => {
-    return enquiry.property.user.id === Number(user?.id);
+  const isPropertyOwner = (enquiry: Enquiry, currentUserId?: number): boolean => {
+    if (!currentUserId) return false;
+    // This assumes property owner ID is available in property_details
+    // You might need to adjust this based on your actual data structure
+    return enquiry.property_details?.user?.id === currentUserId;
   };
   
   const getUnreadMessagesCount = (enquiry: Enquiry): number => {

@@ -8,6 +8,8 @@ interface MapboxContextType {
   markers: mapboxgl.Marker[];
   addMarker: (coordinates: [number, number], popupContent: string | HTMLElement) => mapboxgl.Marker | null;
   clearMarkers: () => void;
+  setMap: (map: mapboxgl.Map | null) => void;
+  flyTo: (coordinates: [number, number], zoom: number) => void;
 }
 
 const MapboxContext = createContext<MapboxContextType>({
@@ -15,6 +17,8 @@ const MapboxContext = createContext<MapboxContextType>({
   markers: [],
   addMarker: () => null,
   clearMarkers: () => {},
+  setMap: () => {},
+  flyTo: () => {},
 });
 
 export const MapboxProvider = ({ children }: { children: ReactNode }) => {
@@ -54,8 +58,25 @@ export const MapboxProvider = ({ children }: { children: ReactNode }) => {
     markersRef.current = [];
   };
 
+  const flyTo = (coordinates: [number, number], zoom: number) => {
+    if (map) {
+      map.flyTo({
+        center: coordinates,
+        zoom: zoom,
+        essential: true
+      });
+    }
+  };
+
   return (
-    <MapboxContext.Provider value={{ map, markers: markersRef.current, addMarker, clearMarkers }}>
+    <MapboxContext.Provider value={{ 
+      map, 
+      markers: markersRef.current, 
+      addMarker, 
+      clearMarkers, 
+      setMap,
+      flyTo 
+    }}>
       {children}
     </MapboxContext.Provider>
   );
